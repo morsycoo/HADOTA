@@ -198,3 +198,33 @@ class GenerationResult(BaseModel):
         ge=0,
         description="Optional total runtime duration reported in nanoseconds.",
     )
+
+
+class StreamEvent(BaseModel):
+    """Normalized event emitted during streaming generation."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+        allow_inf_nan=False,
+    )
+
+    text_delta: str = Field(
+        default="",
+        description="The text fragment received from the runtime.",
+    )
+
+    event_timestamp: float = Field(
+        ge=0,
+        description=("Client-observed monotonic timestamp in seconds."),
+    )
+
+    is_final: StrictBool = Field(
+        default=False,
+        description="Whether this event marks the end of the stream.",
+    )
+
+    final_metadata: GenerationResult | None = Field(
+        default=None,
+        description=("Normalized final generation metadata, when available."),
+    )
