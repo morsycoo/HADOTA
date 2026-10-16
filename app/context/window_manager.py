@@ -79,31 +79,25 @@ class ContextWindowManager:
             raise ValueError("The latest conversation message must be from the user.")
 
         # Preserve complete historical turns and the latest user message.
-        # A historical turn consists of a user message followed by
-        # its assistant response.
+        # Ignore incomplete older turns left by failed generation attempts.
         latest_user_message = conversation_messages[-1]
         historical_messages = conversation_messages[:-1]
 
-        if len(historical_messages) % 2 != 0:
-            raise ValueError(
-                "Conversation history must contain complete "
-                "user-assistant turns before the latest user message."
-            )
+        turns: list[list[ConversationMessage]] = []
+        pending_user_message: ConversationMessage | None = None
 
-        for index in range(0, len(historical_messages), 2):
-            if (
-                historical_messages[index].role != "user"
-                or historical_messages[index + 1].role != "assistant"
-            ):
-                raise ValueError(
-                    "Historical messages must form complete user-assistant turns."
-                )
+        for message in historical_messages:
+            if message.role == "user":
+                # Keep the latest unanswered user message.
+                # Older unanswered requests may result from failed generations.
+                pending_user_message = message
 
-        # Build complete turns so they can be removed atomically.
-        turns = [
-            historical_messages[index : index + 2]
-            for index in range(0, len(historical_messages), 2)
-        ]
+            elif message.role == "assistant":
+                if pending_user_message is None:
+                    raise ValueError("An assistant message must follow a user message.")
+
+                turns.append([pending_user_message, message])
+                pending_user_message = None
 
         while True:
             selected = (
