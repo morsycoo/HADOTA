@@ -272,3 +272,39 @@ def test_rejects_multiple_system_messages():
             num_ctx=100,
             max_new_tokens=20,
         )
+
+
+def test_ignores_unanswered_older_user_messages():
+    """Ignore unanswered older user messages when selecting context."""
+    manager = create_manager()
+
+    messages = [
+        ConversationMessage(
+            role="system",
+            content="You are a helpful assistant.",
+        ),
+        ConversationMessage(
+            role="user",
+            content="An earlier request that failed.",
+        ),
+        ConversationMessage(
+            role="user",
+            content="What is a context window?",
+        ),
+    ]
+
+    selected = manager.fit_messages(
+        messages=messages,
+        num_ctx=100,
+        max_new_tokens=20,
+    )
+
+    assert [message.role for message in selected] == [
+        "system",
+        "user",
+    ]
+
+    assert [message.content for message in selected] == [
+        "You are a helpful assistant.",
+        "What is a context window?",
+    ]

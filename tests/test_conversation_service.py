@@ -706,3 +706,48 @@ def test_send_message_uses_runtime_settings_for_context_defaults(
 
     assert context_call.kwargs["num_ctx"] == 512
     assert context_call.kwargs["max_new_tokens"] == 64
+
+
+def test_send_message_uses_runtime_defaults_when_options_are_none(
+    runtime,
+    conversation,
+    prompt_builder,
+):
+    """Use runtime defaults when context options are explicitly None."""
+    from unittest.mock import Mock
+
+    from app.config import RuntimeSettings
+    from app.services.conversation_service import ConversationService
+
+    context_manager = Mock()
+    context_manager.fit_messages.side_effect = (
+        lambda *, messages, num_ctx, max_new_tokens: messages
+    )
+
+    settings = RuntimeSettings(
+        num_ctx=512,
+        max_new_tokens=64,
+    )
+
+    service = ConversationService(
+        runtime=runtime,
+        conversation=conversation,
+        prompt_builder=prompt_builder,
+        context_window_manager=context_manager,
+        settings=settings,
+    )
+
+    service.send_message(
+        "Explain context management.",
+        num_ctx=None,
+        max_new_tokens=None,
+    )
+
+    request = runtime.generate.call_args.args[0]
+    context_call = context_manager.fit_messages.call_args
+
+    assert request.num_ctx == 512
+    assert request.max_new_tokens == 64
+
+    assert context_call.kwargs["num_ctx"] == 512
+    assert context_call.kwargs["max_new_tokens"] == 64
