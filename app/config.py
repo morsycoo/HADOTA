@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlsplit
 
 from dotenv import dotenv_values
@@ -30,6 +31,7 @@ class RuntimeSettings(BaseModel):
     )
 
     keep_alive: str = "5m"
+    think: bool | Literal["low", "medium", "xhigh"] = False
 
     num_ctx: int = Field(
         default=4096,
@@ -134,6 +136,7 @@ ENV_FIELD_MAPPING = {
     "TOP_K": "top_k",
     "TOP_P": "top_p",
     "SEED": "seed",
+    "THINK": "think",
 }
 
 

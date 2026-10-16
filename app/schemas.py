@@ -94,7 +94,7 @@ class GenerationRequest(BaseModel):
         """Require a string prompt with non-whitespace content."""
 
         if not isinstance(value, str):
-            raise ValueError("prompt must be a string.")
+            raise ValueError("prompt must be a string.")  # noqa: TRY004
 
         if not value.strip():
             raise ValueError("prompt must not be empty or whitespace-only.")
@@ -197,6 +197,32 @@ class GenerationResult(BaseModel):
         strict=True,
         ge=0,
         description="Optional total runtime duration reported in nanoseconds.",
+    )
+    load_duration_ns: int | None = Field(
+        default=None,
+        strict=True,
+        ge=0,
+        description="Optional model load duration reported in nanoseconds.",
+    )
+
+    prompt_eval_duration_ns: int | None = Field(
+        default=None,
+        strict=True,
+        ge=0,
+        description="Optional prompt evaluation duration reported in nanoseconds.",
+    )
+
+    eval_duration_ns: int | None = Field(
+        default=None,
+        strict=True,
+        ge=0,
+        description="Optional output evaluation duration reported in nanoseconds.",
+    )
+
+    client_latency_ms: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Client-observed HTTP request latency in milliseconds.",
     )
 
 
