@@ -420,3 +420,289 @@ def test_stream_message_rejects_prompt_override(
 
     assert conversation.message_count == initial_count
     runtime.generate_stream.assert_not_called()
+
+
+def test_stream_message_closes_runtime_iterator_when_cancelled(
+    service,
+    runtime,
+    conversation,
+):
+    """Close the underlying runtime iterator when the consumer cancels."""
+
+    class ClosableStream:
+        def __init__(self):
+            self._events = iter(
+                [
+                    StreamEvent(
+                        text_delta="Partial response",
+                        event_timestamp=1.0,
+                    ),
+                    StreamEvent(
+                        text_delta=" more text",
+                        event_timestamp=1.1,
+                    ),
+                ]
+            )
+            self.closed = False
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            return next(self._events)
+
+        def close(self):
+            self.closed = True
+
+    stream = ClosableStream()
+    runtime.generate_stream.return_value = stream
+
+    response_stream = service.stream_message("Hello!")
+
+    first_event = next(response_stream)
+
+    assert first_event.text_delta == "Partial response"
+
+    response_stream.close()
+
+    assert stream.closed is True
+
+    messages = conversation.get_messages()
+
+    assert [message.role for message in messages] == [
+        "system",
+        "user",
+    ]
+
+
+def test_stream_message_does_not_store_response_after_unexpected_error(
+    service,
+    runtime,
+    conversation,
+):
+    """Propagate unexpected stream errors without storing partial output."""
+
+    def failing_stream():
+        yield StreamEvent(
+            text_delta="Partial response",
+            event_timestamp=1.0,
+        )
+        raise ValueError("Unexpected streaming failure.")
+
+    runtime.generate_stream.return_value = failing_stream()
+
+    with pytest.raises(
+        ValueError,
+        match="Unexpected streaming failure",
+    ):
+        list(service.stream_message("Hello!"))
+
+    messages = conversation.get_messages()
+
+    assert [message.role for message in messages] == [
+        "system",
+        "user",
+    ]
+
+
+def test_stream_message_rejects_stream_false(
+    service,
+    runtime,
+    conversation,
+):
+    """Reject non-streaming options before modifying conversation history."""
+    initial_count = conversation.message_count
+
+    with pytest.raises(ValueError, match="requires stream=True"):
+        list(
+            service.stream_message(
+                "Hello!",
+                stream=False,
+            )
+        )
+
+    assert conversation.message_count == initial_count
+    runtime.generate_stream.assert_not_called()
+
+
+def test_stream_message_accepts_explicit_stream_true(
+    service,
+    runtime,
+):
+    """Accept an explicit stream=True option without duplicate keyword errors."""
+    events = [
+        StreamEvent(
+            text_delta="Hello!",
+            event_timestamp=1.0,
+        ),
+        StreamEvent(
+            event_timestamp=1.1,
+            is_final=True,
+            final_metadata=GenerationResult(
+                text="Hello!",
+                model="qwen3.8:27b",
+                done=True,
+                done_reason="stop",
+            ),
+        ),
+    ]
+
+    runtime.generate_stream.return_value = iter(events)
+
+    received = list(
+        service.stream_message(
+            "Hi!",
+            stream=True,
+        )
+    )
+
+    assert received == events
+
+    request = runtime.generate_stream.call_args.args[0]
+
+    assert request.stream is True
+
+
+def test_send_message_uses_context_window_manager(
+    runtime,
+    conversation,
+    prompt_builder,
+):
+    """Apply context window management before normal generation."""
+    from app.context.window_manager import ContextWindowManager
+    from app.services.conversation_service import ConversationService
+
+    def word_count(text: str) -> int:
+        return len(text.split())
+
+    context_manager = ContextWindowManager(
+        prompt_builder=prompt_builder,
+        token_counter=word_count,
+        safety_margin=0,
+    )
+
+    service = ConversationService(
+        runtime=runtime,
+        conversation=conversation,
+        prompt_builder=prompt_builder,
+        context_window_manager=context_manager,
+    )
+
+    conversation.add_user_message("An old question.")
+    conversation.add_assistant_message("An old answer.")
+
+    service.send_message(
+        "Explain context windows.",
+        num_ctx=40,
+        max_new_tokens=10,
+    )
+
+    request = runtime.generate.call_args.args[0]
+
+    assert "Explain context windows." in request.prompt
+    assert request.num_ctx == 40
+    assert request.max_new_tokens == 10
+
+
+def test_stream_message_uses_context_window_manager(
+    runtime,
+    conversation,
+    prompt_builder,
+):
+    """Apply context window management before streaming generation."""
+    from app.context.window_manager import ContextWindowManager
+    from app.services.conversation_service import ConversationService
+
+    def word_count(text: str) -> int:
+        return len(text.split())
+
+    context_manager = ContextWindowManager(
+        prompt_builder=prompt_builder,
+        token_counter=word_count,
+        safety_margin=0,
+    )
+
+    service = ConversationService(
+        runtime=runtime,
+        conversation=conversation,
+        prompt_builder=prompt_builder,
+        context_window_manager=context_manager,
+    )
+
+    events = [
+        StreamEvent(
+            text_delta="Context windows manage prompt size.",
+            event_timestamp=1.0,
+        ),
+        StreamEvent(
+            event_timestamp=1.1,
+            is_final=True,
+            final_metadata=GenerationResult(
+                text="Context windows manage prompt size.",
+                model="qwen3.8:27b",
+                done=True,
+                done_reason="stop",
+            ),
+        ),
+    ]
+
+    runtime.generate_stream.return_value = iter(events)
+
+    received = list(
+        service.stream_message(
+            "Explain context windows.",
+            num_ctx=40,
+            max_new_tokens=10,
+        )
+    )
+
+    assert received == events
+    runtime.generate_stream.assert_called_once()
+
+    request = runtime.generate_stream.call_args.args[0]
+
+    assert "Explain context windows." in request.prompt
+    assert request.num_ctx == 40
+    assert request.max_new_tokens == 10
+    assert request.stream is True
+
+
+def test_send_message_uses_runtime_settings_for_context_defaults(
+    runtime,
+    conversation,
+    prompt_builder,
+):
+    """Use runtime settings as the default context generation options."""
+    from unittest.mock import Mock
+
+    from app.config import RuntimeSettings
+    from app.services.conversation_service import ConversationService
+
+    context_manager = Mock()
+    context_manager.fit_messages.side_effect = (
+        lambda *, messages, num_ctx, max_new_tokens: messages
+    )
+
+    settings = RuntimeSettings(
+        num_ctx=512,
+        max_new_tokens=64,
+    )
+
+    service = ConversationService(
+        runtime=runtime,
+        conversation=conversation,
+        prompt_builder=prompt_builder,
+        context_window_manager=context_manager,
+        settings=settings,
+    )
+
+    service.send_message("Explain context window management.")
+
+    request = runtime.generate.call_args.args[0]
+    context_call = context_manager.fit_messages.call_args
+
+    assert request.num_ctx == 512
+    assert request.max_new_tokens == 64
+
+    assert context_call.kwargs["num_ctx"] == 512
+    assert context_call.kwargs["max_new_tokens"] == 64
