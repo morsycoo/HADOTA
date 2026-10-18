@@ -52,3 +52,72 @@ def test_real_ollama_non_streaming_smoke() -> None:
     print(f"Generated token count: {result.eval_count}")
     print(f"Client latency (ms): {result.client_latency_ms:.2f}")
     print(f"Runtime total duration (ns): {result.total_duration_ns}")
+
+
+def test_real_ollama_json_schema_smoke() -> None:
+    """Verify structured JSON output against a real Ollama model."""
+
+    settings = load_settings()
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "answer": {"type": "string"},
+            "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+            },
+            "topics": {
+                "type": "array",
+                "items": {"type": "string"},
+                "minItems": 3,
+                "maxItems": 3,
+            },
+        },
+        "required": ["answer", "confidence", "topics"],
+        "additionalProperties": False,
+    }
+
+    request = GenerationRequest(
+        prompt=(
+            "Explain what an LLM inference runtime does. "
+            "Return a concise answer, a confidence score between 0 and 1, "
+            "and exactly three relevant topics."
+        ),
+        stream=False,
+        max_new_tokens=256,
+        temperature=0.2,
+        format=schema,
+    )
+
+    with OllamaRuntime(settings=settings) as runtime:
+        assert runtime.health() is True
+
+        available_models = runtime.list_models()
+        assert settings.model_name in available_models, (
+            f"Configured model '{settings.model_name}' was not found. "
+            f"Available models: {available_models}"
+        )
+
+        result = runtime.generate(request)
+
+    import json
+
+    data = json.loads(result.text)
+
+    assert isinstance(data, dict)
+    assert set(data.keys()) == {"answer", "confidence", "topics"}
+    assert isinstance(data["answer"], str) and data["answer"].strip()
+    assert isinstance(data["confidence"], (int, float))
+    assert 0 <= data["confidence"] <= 1
+    assert isinstance(data["topics"], list)
+    assert len(data["topics"]) == 3
+    assert all(isinstance(topic, str) for topic in data["topics"])
+
+    print(f"\nRuntime model: {result.model}")
+    print(f"Structured output: {json.dumps(data, indent=2)}")
+    print("JSON Schema validation: PASS")
+    print(f"Prompt token count: {result.prompt_eval_count}")
+    print(f"Generated token count: {result.eval_count}")
+    print(f"Client latency (ms): {result.client_latency_ms:.2f}")

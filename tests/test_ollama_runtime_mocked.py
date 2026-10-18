@@ -275,6 +275,109 @@ def test_generate_success_normalizes_response_and_payload() -> None:
         client.close()
 
 
+def test_generate_passes_json_format_to_ollama() -> None:
+    """Pass the requested structured output format to Ollama."""
+
+    captured_payload = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured_payload.update(json.loads(request.content))
+
+        return httpx.Response(
+            200,
+            json={
+                "model": "qwen3.8:27b",
+                "response": '{"status":"ok"}',
+                "done": True,
+            },
+        )
+
+    runtime, client = make_runtime(handler)
+
+    try:
+        result = runtime.generate(
+            GenerationRequest(
+                prompt="Return a JSON object with status set to ok.",
+                format="json",
+            )
+        )
+
+        assert result.text == '{"status":"ok"}'
+        assert captured_payload["format"] == "json"
+    finally:
+        client.close()
+
+
+def test_generate_omits_format_when_not_requested() -> None:
+    """Preserve the default payload when no output format is requested."""
+
+    captured_payload = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured_payload.update(json.loads(request.content))
+
+        return httpx.Response(
+            200,
+            json={
+                "model": "qwen3.8:27b",
+                "response": "Ordinary text response.",
+                "done": True,
+            },
+        )
+
+    runtime, client = make_runtime(handler)
+
+    try:
+        runtime.generate(GenerationRequest(prompt="Explain an LLM runtime."))
+
+        assert "format" not in captured_payload
+    finally:
+        client.close()
+
+
+def test_generate_passes_json_schema_to_ollama() -> None:
+    """Pass the complete JSON Schema to Ollama."""
+
+    captured_payload = {}
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "answer": {"type": "string"},
+            "confidence": {"type": "number"},
+        },
+        "required": ["answer", "confidence"],
+        "additionalProperties": False,
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured_payload.update(json.loads(request.content))
+
+        return httpx.Response(
+            200,
+            json={
+                "model": "qwen3.8:27b",
+                "response": '{"answer":"Test response","confidence":0.95}',
+                "done": True,
+            },
+        )
+
+    runtime, client = make_runtime(handler)
+
+    try:
+        result = runtime.generate(
+            GenerationRequest(
+                prompt="Answer the question using the provided JSON Schema.",
+                format=schema,
+            )
+        )
+
+        assert result.text == ('{"answer":"Test response","confidence":0.95}')
+        assert captured_payload["format"] == schema
+    finally:
+        client.close()
+
+
 def test_generate_resolves_explicit_request_overrides() -> None:
     """Use request options when they override the central defaults."""
 

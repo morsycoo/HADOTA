@@ -9,6 +9,10 @@ from app.conversation import ConversationManager
 from app.prompt_builder import PromptBuilder
 from app.runtime.exceptions import RuntimeConnectionError, RuntimeStreamingError
 from app.schemas import GenerationRequest, GenerationResult, StreamEvent
+from app.structured_output import (
+    StructuredOutputParsingError,
+    StructuredOutputValidationError,
+)
 
 
 @pytest.fixture
@@ -751,3 +755,94 @@ def test_send_message_uses_runtime_defaults_when_options_are_none(
 
     assert context_call.kwargs["num_ctx"] == 512
     assert context_call.kwargs["max_new_tokens"] == 64
+
+
+def test_send_structured_message_returns_validated_data(service, runtime):
+    """Return parsed data when the generated JSON matches the schema."""
+    runtime.generate.return_value = GenerationResult(
+        text='{"answer": "Hello", "confidence": 0.95}',
+        model="qwen3.8:27b",
+        done=True,
+    )
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "answer": {"type": "string"},
+            "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        },
+        "required": ["answer", "confidence"],
+        "additionalProperties": False,
+    }
+
+    result = service.send_structured_message("Say hello.", schema)
+
+    assert result == {"answer": "Hello", "confidence": 0.95}
+    request = runtime.generate.call_args.args[0]
+    assert request.format == schema
+
+
+def test_send_structured_message_rejects_invalid_json(service, runtime):
+    """Raise a parsing error when the runtime returns malformed JSON."""
+    runtime.generate.return_value = GenerationResult(
+        text="{invalid json}",
+        model="qwen3.8:27b",
+        done=True,
+    )
+
+    schema = {"type": "object"}
+
+    with pytest.raises(StructuredOutputParsingError):
+        service.send_structured_message("Return JSON.", schema)
+
+
+def test_send_structured_message_rejects_schema_violation(service, runtime):
+    """Raise a validation error when generated JSON violates the schema."""
+    runtime.generate.return_value = GenerationResult(
+        text='{"confidence": 1.5}',
+        model="qwen3.8:27b",
+        done=True,
+    )
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        },
+        "required": ["confidence"],
+    }
+
+    with pytest.raises(StructuredOutputValidationError):
+        service.send_structured_message("Return confidence.", schema)
+
+
+def test_send_structured_message_does_not_store_invalid_response(
+    service,
+    runtime,
+    conversation,
+):
+    """Do not store an assistant response when structured validation fails."""
+    runtime.generate.return_value = GenerationResult(
+        text='{"confidence": 1.5}',
+        model="qwen3.8:27b",
+        done=True,
+    )
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+            },
+        },
+        "required": ["confidence"],
+    }
+
+    with pytest.raises(StructuredOutputValidationError):
+        service.send_structured_message("Return confidence.", schema)
+
+    messages = conversation.get_messages()
+
+    assert [message.role for message in messages] == ["system", "user"]

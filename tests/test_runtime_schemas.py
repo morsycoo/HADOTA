@@ -12,6 +12,7 @@ def test_minimal_generation_request() -> None:
     request = GenerationRequest(prompt="Explain how an LLM runtime works.")
 
     assert request.prompt == "Explain how an LLM runtime works."
+    assert request.format is None
     assert request.model is None
     assert request.stream is False
     assert request.max_new_tokens is None
@@ -29,6 +30,7 @@ def test_generation_request_with_explicit_options() -> None:
 
     request = GenerationRequest(
         prompt="Explain runtime adapters.",
+        format="json",
         model="qwen3.8:27b",
         stream=True,
         max_new_tokens=32,
@@ -41,6 +43,7 @@ def test_generation_request_with_explicit_options() -> None:
         keep_alive="5m",
     )
 
+    assert request.format == "json"
     assert request.model == "qwen3.8:27b"
     assert request.stream is True
     assert request.max_new_tokens == 32
@@ -188,6 +191,49 @@ def test_request_serialization() -> None:
     payload = request.model_dump()
 
     assert payload["prompt"] == "Explain configuration validation."
+    assert payload["format"] is None
     assert payload["max_new_tokens"] == 24
     assert payload["stream"] is False
     assert payload["temperature"] is None
+
+
+@pytest.mark.parametrize(
+    "invalid_format",
+    [
+        "xml",
+        "text",
+        "",
+        123,
+    ],
+)
+def test_invalid_output_formats_are_rejected(
+    invalid_format: object,
+) -> None:
+    """Reject unsupported structured output format values."""
+
+    with pytest.raises(ValidationError):
+        GenerationRequest(
+            prompt="Test input.",
+            format=invalid_format,
+        )
+
+
+def test_generation_request_accepts_json_schema() -> None:
+    """Accept a JSON Schema as the structured output format."""
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "answer": {"type": "string"},
+            "confidence": {"type": "number"},
+        },
+        "required": ["answer", "confidence"],
+        "additionalProperties": False,
+    }
+
+    request = GenerationRequest(
+        prompt="Answer the question.",
+        format=schema,
+    )
+
+    assert request.format == schema
