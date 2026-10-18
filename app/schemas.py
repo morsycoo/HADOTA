@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, Literal
+
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -24,6 +26,11 @@ class GenerationRequest(BaseModel):
         min_length=1,
         description="The input text provided to the language model.",
     )
+
+    format: Literal["json"] | dict[str, Any] | None = Field(
+    default=None,
+    description="Optional JSON mode or JSON Schema for structured output.",
+)
 
     model: str | None = Field(
         default=None,

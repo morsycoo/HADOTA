@@ -5,7 +5,7 @@ from typing import Any
 
 from app.config import RuntimeSettings, load_settings
 from app.context.window_manager import ContextWindowManager
-from app.conversation import ConversationManager
+from app.conversation import ConversationManager, ConversationMessage
 from app.prompt_builder import PromptBuilder
 from app.runtime.base import RuntimeInterface
 from app.runtime.exceptions import RuntimeStreamingError
@@ -14,6 +14,7 @@ from app.schemas import (
     GenerationResult,
     StreamEvent,
 )
+from app.structured_output import parse_and_validate_json
 
 
 class ConversationService:
@@ -93,6 +94,65 @@ class ConversationService:
         self._conversation.add_assistant_message(result.text)
 
         return result
+
+    def send_structured_message(
+        self,
+        content: str,
+        schema: dict[str, Any],
+        **generation_options: Any,
+    ) -> Any:
+        """Generate, parse, and validate a structured assistant response."""
+        if "format" in generation_options:
+            raise ValueError(
+                "Use the schema argument instead of specifying format directly."
+            )
+
+        self._validate_message(content, generation_options)
+
+        messages = [
+            *self._conversation.get_messages(),
+            ConversationMessage(role="user", content=content),
+        ]
+
+        num_ctx = generation_options.get("num_ctx")
+        if num_ctx is None:
+            num_ctx = self._settings.num_ctx
+
+        max_new_tokens = generation_options.get("max_new_tokens")
+        if max_new_tokens is None:
+            max_new_tokens = self._settings.max_new_tokens
+
+        if self._context_window_manager is not None:
+            messages = self._context_window_manager.fit_messages(
+                messages=messages,
+                num_ctx=num_ctx,
+                max_new_tokens=max_new_tokens,
+            )
+
+        request = self._prompt_builder.build_request(
+            messages,
+            **{
+                **generation_options,
+                "format": schema,
+                "num_ctx": num_ctx,
+                "max_new_tokens": max_new_tokens,
+            },
+        )
+
+        self._conversation.add_user_message(content)
+
+        result = self._runtime.generate(request)
+
+        if not result.done:
+            raise RuntimeError(
+                "Generation is incomplete; assistant response was not stored."
+            )
+
+        parsed_result = parse_and_validate_json(result.text, schema)
+
+        self._conversation.add_assistant_message(result.text)
+
+        return parsed_result
 
     def stream_message(
         self,

@@ -270,7 +270,7 @@ class OllamaRuntime:
             else self.settings.keep_alive
         )
 
-        return {
+        payload = {
             "model": model_name,
             "prompt": request.prompt,
             "stream": False,
@@ -278,6 +278,11 @@ class OllamaRuntime:
             "keep_alive": keep_alive,
             "options": options,
         }
+
+        if request.format is not None:
+            payload["format"] = request.format
+
+        return payload
 
     def generate(
         self,
