@@ -1,6 +1,6 @@
 # HADOTA — Local AI Assistant
 
-> **HADOTA** is a local AI assistant inspired by the Egyptian idea of a *hadota*: someone full of stories, knowledge, and insights, with something to say about almost any topic.
+> **HADOTA** takes its name from the Egyptian Arabic word for a story or tale. Inspired by the idea of a curious storyteller with a wealth of knowledge, HADOTA "حدوته" aims to be a local AI companion for exploring ideas, learning new things, and discussing a wide range of topics.
 
 🚧 **Status: In active development** — this README is a temporary overview and will evolve as the project grows.
 
