@@ -1,4 +1,4 @@
-# HADOTA — Local AI Assistant
+# HADOTA - Local AI Assistant
 
 > **HADOTA** takes its name from the Egyptian Arabic word for a story or tale. Inspired by the idea of a curious storyteller with a wealth of knowledge, HADOTA "حدوته" aims to be a local AI companion for exploring ideas, learning new things, and discussing a wide range of topics.
 
