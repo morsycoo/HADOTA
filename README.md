@@ -1,7 +1,7 @@
 # HADOTA - Local AI Assistant
 
 <p align="center">
-  <img src="assets/HADOTA.png" alt="HADOTA (حَدُّوتَة) — Your Local AI Assistant" width="900">
+  <img src="assets/HADOTA (حَدُّوتَة).png" alt="HADOTA (حَدُّوتَة) — Your Local AI Assistant" width="900">
 </p>
 
 > **HADOTA (حَدُّوتَة)** takes its name from the Egyptian Arabic word for a story or tale. Inspired by a great storyteller's curiosity, HADOTA is a local AI companion designed to make learning, exploring ideas, and having meaningful conversations feel natural and engaging.
