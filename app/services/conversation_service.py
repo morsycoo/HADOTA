@@ -8,7 +8,7 @@ from app.context.window_manager import ContextWindowManager
 from app.conversation import ConversationManager, ConversationMessage
 from app.prompt_builder import PromptBuilder
 from app.runtime.base import RuntimeInterface
-from app.runtime.exceptions import RuntimeStreamingError
+from app.runtime.exceptions import IncompleteGenerationError, RuntimeStreamingError
 from app.schemas import (
     GenerationRequest,
     GenerationResult,
@@ -87,7 +87,7 @@ class ConversationService:
         result = self._runtime.generate(request)
 
         if not result.done:
-            raise RuntimeError(
+            raise IncompleteGenerationError(
                 "Generation is incomplete; assistant response was not stored."
             )
 
@@ -144,7 +144,7 @@ class ConversationService:
         result = self._runtime.generate(request)
 
         if not result.done:
-            raise RuntimeError(
+            raise IncompleteGenerationError(
                 "Generation is incomplete; assistant response was not stored."
             )
 

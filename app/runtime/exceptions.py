@@ -39,3 +39,7 @@ class RuntimeStreamingError(RuntimeErrorBase):
 
 class InvalidGenerationRequestError(RuntimeErrorBase):
     """Raised when an invalid generation request reaches the runtime layer."""
+
+
+class IncompleteGenerationError(RuntimeErrorBase):
+    """Raised when generation ends before a complete assistant response is available."""
