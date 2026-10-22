@@ -8,7 +8,10 @@ import pytest
 from app.cli import run_cli
 from app.config import RuntimeSettings
 from app.conversation import ConversationManager
-from app.runtime.exceptions import RuntimeConnectionError
+from app.runtime.exceptions import (
+    IncompleteGenerationError,
+    RuntimeConnectionError,
+)
 from app.schemas import GenerationResult, StreamEvent
 from app.services.conversation_service import ConversationService
 from app.structured_output import StructuredOutputValidationError
@@ -94,6 +97,7 @@ class FakeService:
                 done=True,
             ),
         )
+
 
 @pytest.fixture
 def cli_components(
@@ -304,3 +308,93 @@ def test_eof_exits_and_closes_runtime(
 
     assert "Input closed. Exiting." in output
     assert runtime.closed
+
+
+def test_empty_input_is_ignored(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    cli_components: tuple[FakeRuntime, FakeService, list[str]],
+) -> None:
+    """Ignore empty input without calling any generation method."""
+    _, service, _ = cli_components
+
+    output = run_with_inputs(
+        monkeypatch,
+        ["", "   ", "Hello", "/exit"],
+        capsys,
+    )
+
+    assert service.normal_calls == ["Hello"]
+    assert service.structured_calls == []
+    assert service.streaming_calls == []
+    assert "Assistant: Reply to: Hello" in output
+
+
+def test_unknown_command_does_not_call_generation(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    cli_components: tuple[FakeRuntime, FakeService, list[str]],
+) -> None:
+    """Report an unknown command without sending it to the model."""
+    _, service, _ = cli_components
+
+    output = run_with_inputs(
+        monkeypatch,
+        ["/unknown", "/exit"],
+        capsys,
+    )
+
+    assert "Unknown command." in output
+    assert service.normal_calls == []
+    assert service.structured_calls == []
+    assert service.streaming_calls == []
+
+
+def test_json_mode_takes_precedence_when_both_modes_are_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    cli_components: tuple[FakeRuntime, FakeService, list[str]],
+) -> None:
+    """Use structured generation when JSON and streaming modes are both enabled."""
+    _, service, _ = cli_components
+
+    output = run_with_inputs(
+        monkeypatch,
+        ["/stream", "/json", "Hello", "/exit"],
+        capsys,
+    )
+
+    assert service.structured_calls == ["Hello"]
+    assert service.normal_calls == []
+    assert service.streaming_calls == []
+    assert "Structured JSON mode: ON" in output
+    assert '"answer": "Reply to: Hello"' in output
+
+
+def test_incomplete_generation_does_not_terminate_cli(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    cli_components: tuple[FakeRuntime, FakeService, list[str]],
+) -> None:
+    """Report incomplete generation and keep the CLI interactive."""
+    _, service, _ = cli_components
+
+    def incomplete_generation(content: str) -> GenerationResult:
+        service.normal_calls.append(content)
+        raise IncompleteGenerationError(
+            "Generation is incomplete; assistant response was not stored."
+        )
+
+    service.send_message = incomplete_generation  # type: ignore[method-assign]
+
+    output = run_with_inputs(
+        monkeypatch,
+        ["Hello", "/exit"],
+        capsys,
+    )
+
+    assert (
+        "Request failed: Generation is incomplete; assistant response was not stored."
+    ) in output
+    assert "Goodbye!" in output
+    assert service.normal_calls == ["Hello"]

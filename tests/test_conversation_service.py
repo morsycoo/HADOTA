@@ -7,7 +7,11 @@ import pytest
 
 from app.conversation import ConversationManager
 from app.prompt_builder import PromptBuilder
-from app.runtime.exceptions import RuntimeConnectionError, RuntimeStreamingError
+from app.runtime.exceptions import (
+    IncompleteGenerationError,
+    RuntimeConnectionError,
+    RuntimeStreamingError,
+)
 from app.schemas import GenerationRequest, GenerationResult, StreamEvent
 from app.structured_output import (
     StructuredOutputParsingError,
@@ -199,7 +203,7 @@ def test_send_message_does_not_store_response_when_generation_is_incomplete(
         done=False,
     )
 
-    with pytest.raises(RuntimeError, match="incomplete"):
+    with pytest.raises(IncompleteGenerationError, match="incomplete"):
         service.send_message("Hello!")
 
     messages = conversation.get_messages()
@@ -842,6 +846,32 @@ def test_send_structured_message_does_not_store_invalid_response(
 
     with pytest.raises(StructuredOutputValidationError):
         service.send_structured_message("Return confidence.", schema)
+
+    messages = conversation.get_messages()
+
+    assert [message.role for message in messages] == ["system", "user"]
+
+
+def test_send_structured_message_does_not_store_incomplete_response(
+    service,
+    runtime,
+    conversation,
+):
+    """Reject incomplete structured generation without storing an assistant turn."""
+    runtime.generate.return_value = GenerationResult(
+        text='{"answer": "Partial"}',
+        model="qwen3.8:27b",
+        done=False,
+    )
+
+    schema = {
+        "type": "object",
+        "properties": {"answer": {"type": "string"}},
+        "required": ["answer"],
+    }
+
+    with pytest.raises(IncompleteGenerationError, match="incomplete"):
+        service.send_structured_message("Return JSON.", schema)
 
     messages = conversation.get_messages()
 
