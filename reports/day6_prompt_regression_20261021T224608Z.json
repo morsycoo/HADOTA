@@ -1,0 +1,225 @@
+{
+  "timestamp_utc": "2026-10-21T22:46:08.348988+00:00",
+  "model_configured": "qwen3.8:27b",
+  "ollama_host": "http://127.0.0.1:11434",
+  "request_timeout_seconds": 120.0,
+  "num_ctx": 4096,
+  "max_new_tokens": 128,
+  "temperature": 0.0,
+  "case_ids": [
+    "prompt_002",
+    "prompt_003",
+    "prompt_005",
+    "prompt_006",
+    "prompt_008",
+    "prompt_009"
+  ],
+  "summary": {
+    "total": 6,
+    "completed": 6,
+    "errors": 0,
+    "passed": 5,
+    "failed": 1
+  },
+  "results": [
+    {
+      "case_id": "prompt_002",
+      "category": "format_constraint",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "*   Accelerates the development cycle by enabling rapid feedback loops and allowing teams to run extensive test suites in a fraction of the time required for manual execution.\n*   Enhances software reliability and consistency by eliminating human error and ensuring that identical test scenarios are executed precisely every time.\n*   Reduces long-term costs by freeing up skilled engineers to focus on complex exploratory testing and new feature development rather than repetitive regression tasks.",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "non_empty_output": true,
+          "exactly_three_bullet_lines": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "Each bullet describes a distinct, relevant benefit."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 18181.598099996336,
+        "prompt_eval_count": 36,
+        "eval_count": 87,
+        "total_duration_ns": 18132711100,
+        "load_duration_ns": 17365800,
+        "prompt_eval_duration_ns": 1561039000,
+        "eval_duration_ns": 15460058000
+      }
+    },
+    {
+      "case_id": "prompt_003",
+      "category": "conciseness",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "An API adapter is a software component that translates requests and responses between different API formats or protocols, enabling incompatible systems to communicate seamlessly. It acts as an intermediary layer that abstracts the underlying differences, allowing clients to interact with diverse services using a unified interface.",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "must_include:adapter": true,
+          "non_empty_output": true,
+          "at_most_two_sentences_approx": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The explanation is concise and technically accurate."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 11805.236199987121,
+        "prompt_eval_count": 36,
+        "eval_count": 52,
+        "total_duration_ns": 11783987600,
+        "load_duration_ns": 11603100,
+        "prompt_eval_duration_ns": 1136672000,
+        "eval_duration_ns": 9863787000
+      }
+    },
+    {
+      "case_id": "prompt_005",
+      "category": "conversation_context",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "You said you were comparing REST with **GraphQL**.",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "must_include:GraphQL": true,
+          "non_empty_output": true,
+          "contains_required_phrase": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The response correctly uses the earlier conversation context."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 3099.5672999997623,
+        "prompt_eval_count": 75,
+        "eval_count": 11,
+        "total_duration_ns": 3094033500,
+        "load_duration_ns": 3813200,
+        "prompt_eval_duration_ns": 1090070000,
+        "eval_duration_ns": 1078703000
+      }
+    },
+    {
+      "case_id": "prompt_006",
+      "category": "uncertainty_handling",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "length",
+      "response": "I cannot predict the exact latency your local model will achieve tomorrow at 3 PM.\n\nLatency is determined by dynamic, real-time factors that are impossible to know in advance, including:\n\n1.  **System Load:** CPU/GPU usage by other processes at that specific time.\n2.  **Thermal Throttling:** Whether your hardware is running hot and reducing clock speeds.\n3.  **Background Tasks:** OS updates, antivirus scans, or other applications running concurrently.\n4.  **Input/Output Variance:** The specific length and complexity of the prompt you will use.\n5.  **",
+      "evaluation": {
+        "passed": false,
+        "checks": {
+          "non_empty_output": true,
+          "generation_completed": false
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The response does not claim to know an exact future latency and explains what measurement would be needed."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 24082.168099994306,
+        "prompt_eval_count": 50,
+        "eval_count": 128,
+        "total_duration_ns": 24056291100,
+        "load_duration_ns": 3994800,
+        "prompt_eval_duration_ns": 1090795000,
+        "eval_duration_ns": 22111638000
+      }
+    },
+    {
+      "case_id": "prompt_008",
+      "category": "clarification_request",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "What specific text, code, or item would you like me to improve?",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "non_empty_output": true,
+          "contains_question_mark": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The response asks what 'it' refers to or what kind of improvement is wanted."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 5393.244299979415,
+        "prompt_eval_count": 41,
+        "eval_count": 16,
+        "total_duration_ns": 5388766800,
+        "load_duration_ns": 6454400,
+        "prompt_eval_duration_ns": 1142677000,
+        "eval_duration_ns": 3431467000
+      }
+    },
+    {
+      "case_id": "prompt_009",
+      "category": "structured_output",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "{\n  \"category\": \"Connectivity\",\n  \"summary\": \"The application is unable to establish a connection with the local Ollama server.\",\n  \"recommended_action\": \"Verify that the Ollama service is running and check the network configuration, including the host address and port settings.\"\n}",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "must_include:category": true,
+          "must_include:summary": true,
+          "must_include:recommended_action": true,
+          "must_not_include:```": true,
+          "non_empty_output": true,
+          "valid_json_object": true,
+          "required_keys_present": true,
+          "string_values": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The category and recommended action are appropriate for a local runtime connection failure."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 10181.599000003189,
+        "prompt_eval_count": 64,
+        "eval_count": 65,
+        "total_duration_ns": 10171874400,
+        "load_duration_ns": 6146700,
+        "prompt_eval_duration_ns": 1163865000,
+        "eval_duration_ns": 8152924000
+      }
+    }
+  ]
+}

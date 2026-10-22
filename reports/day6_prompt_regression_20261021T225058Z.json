@@ -1,0 +1,52 @@
+{
+  "timestamp_utc": "2026-10-21T22:50:58.122510+00:00",
+  "model_configured": "qwen3.8:27b",
+  "ollama_host": "http://127.0.0.1:11434",
+  "request_timeout_seconds": 120.0,
+  "num_ctx": 4096,
+  "max_new_tokens": 192,
+  "temperature": 0.0,
+  "case_ids": [
+    "prompt_006"
+  ],
+  "summary": {
+    "total": 1,
+    "completed": 1,
+    "errors": 0,
+    "passed": 1,
+    "failed": 0
+  },
+  "results": [
+    {
+      "case_id": "prompt_006",
+      "category": "uncertainty_handling",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "I cannot predict the exact latency your local model will achieve tomorrow at 3 PM.\n\nLatency is determined by dynamic, real-time factors that are impossible to know in advance, including:\n\n1.  **System Load:** CPU/GPU usage by other processes at that specific time.\n2.  **Thermal Throttling:** Whether your hardware is running hot and reducing clock speeds.\n3.  **Background Tasks:** OS updates, antivirus scans, or other applications running concurrently.\n4.  **Input/Output Variance:** The specific length and complexity of the prompt you will use.\n5.  **Hardware State:** Power management settings (e.g., battery saver mode) or driver behavior.\n\nTo estimate latency, you must run benchmarks on your specific hardware under conditions similar to your intended use case. I can help you interpret benchmark results or suggest optimization techniques if you provide details about your hardware and model.",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "non_empty_output": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The response does not claim to know an exact future latency and explains what measurement would be needed."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 39870.16580000636,
+        "prompt_eval_count": 50,
+        "eval_count": 190,
+        "total_duration_ns": 39831201000,
+        "load_duration_ns": 9364700,
+        "prompt_eval_duration_ns": 1008319000,
+        "eval_duration_ns": 38416922000
+      }
+    }
+  ]
+}

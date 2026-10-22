@@ -1,0 +1,225 @@
+{
+  "timestamp_utc": "2026-10-21T22:55:11.883190+00:00",
+  "model_configured": "qwen3.8:27b",
+  "ollama_host": "http://127.0.0.1:11434",
+  "request_timeout_seconds": 120.0,
+  "num_ctx": 4096,
+  "max_new_tokens": 192,
+  "temperature": 0.0,
+  "case_ids": [
+    "prompt_002",
+    "prompt_003",
+    "prompt_005",
+    "prompt_006",
+    "prompt_008",
+    "prompt_009"
+  ],
+  "summary": {
+    "total": 6,
+    "completed": 6,
+    "errors": 0,
+    "passed": 6,
+    "failed": 0
+  },
+  "results": [
+    {
+      "case_id": "prompt_002",
+      "category": "format_constraint",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "*   Accelerates the development cycle by enabling rapid feedback loops and allowing teams to run extensive test suites in a fraction of the time required for manual execution.\n*   Enhances software reliability and consistency by eliminating human error and ensuring that identical test scenarios are executed precisely every time.\n*   Reduces long-term costs by freeing up skilled engineers to focus on complex exploratory testing and new feature development rather than repetitive regression tasks.",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "non_empty_output": true,
+          "exactly_three_bullet_lines": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "Each bullet describes a distinct, relevant benefit."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 17737.006600014865,
+        "prompt_eval_count": 36,
+        "eval_count": 87,
+        "total_duration_ns": 17723251700,
+        "load_duration_ns": 12586500,
+        "prompt_eval_duration_ns": 885305000,
+        "eval_duration_ns": 16482844000
+      }
+    },
+    {
+      "case_id": "prompt_003",
+      "category": "conciseness",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "An API adapter is a software component that translates requests and responses between different API formats or protocols, enabling incompatible systems to communicate seamlessly. It acts as an intermediary layer that abstracts the underlying differences, allowing clients to interact with diverse services using a unified interface.",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "must_include:adapter": true,
+          "non_empty_output": true,
+          "at_most_two_sentences_approx": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The explanation is concise and technically accurate."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 11553.631199989468,
+        "prompt_eval_count": 36,
+        "eval_count": 52,
+        "total_duration_ns": 11548903700,
+        "load_duration_ns": 8608100,
+        "prompt_eval_duration_ns": 628177000,
+        "eval_duration_ns": 10724762000
+      }
+    },
+    {
+      "case_id": "prompt_005",
+      "category": "conversation_context",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "You said you were comparing REST with **GraphQL**.",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "must_include:GraphQL": true,
+          "non_empty_output": true,
+          "contains_required_phrase": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The response correctly uses the earlier conversation context."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 2020.9029999969061,
+        "prompt_eval_count": 75,
+        "eval_count": 11,
+        "total_duration_ns": 2017480700,
+        "load_duration_ns": 9870100,
+        "prompt_eval_duration_ns": 646614000,
+        "eval_duration_ns": 1159471000
+      }
+    },
+    {
+      "case_id": "prompt_006",
+      "category": "uncertainty_handling",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "I cannot predict the exact latency your local model will achieve tomorrow at 3 PM.\n\nLatency is determined by dynamic, real-time factors that are impossible to know in advance, including:\n\n1.  **System Load:** CPU/GPU usage by other processes at that specific time.\n2.  **Thermal Throttling:** Whether your hardware is running hot and reducing clock speeds.\n3.  **Background Tasks:** OS updates, antivirus scans, or other applications running concurrently.\n4.  **Input/Output Variance:** The specific length and complexity of the prompt you will use.\n5.  **Hardware State:** Power management settings (e.g., battery saver mode) or driver behavior.\n\nTo estimate latency, you must run benchmarks on your specific hardware under conditions similar to your intended use case. I can help you interpret benchmark results or suggest optimization techniques if you provide details about your hardware and model.",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "non_empty_output": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The response does not claim to know an exact future latency and explains what measurement would be needed."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 39493.15879997448,
+        "prompt_eval_count": 50,
+        "eval_count": 190,
+        "total_duration_ns": 39488872300,
+        "load_duration_ns": 5797300,
+        "prompt_eval_duration_ns": 1265884000,
+        "eval_duration_ns": 38097619000
+      }
+    },
+    {
+      "case_id": "prompt_008",
+      "category": "clarification_request",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "What specific text, code, or item would you like me to improve?",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "non_empty_output": true,
+          "contains_question_mark": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The response asks what 'it' refers to or what kind of improvement is wanted."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 4009.2206000117585,
+        "prompt_eval_count": 41,
+        "eval_count": 16,
+        "total_duration_ns": 4005987600,
+        "load_duration_ns": 6521800,
+        "prompt_eval_duration_ns": 619541000,
+        "eval_duration_ns": 3311355000
+      }
+    },
+    {
+      "case_id": "prompt_009",
+      "category": "structured_output",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "{\n  \"category\": \"Connectivity\",\n  \"summary\": \"The application is unable to establish a connection with the local Ollama server.\",\n  \"recommended_action\": \"Verify that the Ollama service is running and check the network configuration, including the host address and port settings.\"\n}",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "must_include:category": true,
+          "must_include:summary": true,
+          "must_include:recommended_action": true,
+          "must_not_include:```": true,
+          "non_empty_output": true,
+          "valid_json_object": true,
+          "required_keys_present": true,
+          "string_values": true,
+          "generation_completed": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The category and recommended action are appropriate for a local runtime connection failure."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 9163.801100017736,
+        "prompt_eval_count": 64,
+        "eval_count": 65,
+        "total_duration_ns": 9160034300,
+        "load_duration_ns": 8571300,
+        "prompt_eval_duration_ns": 648129000,
+        "eval_duration_ns": 8329495000
+      }
+    }
+  ]
+}

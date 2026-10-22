@@ -1,0 +1,220 @@
+{
+  "timestamp_utc": "2026-10-21T21:59:54.691717+00:00",
+  "model_configured": "qwen3.8:27b",
+  "ollama_host": "http://127.0.0.1:11434",
+  "request_timeout_seconds": 120.0,
+  "num_ctx": 4096,
+  "max_new_tokens": 16,
+  "temperature": 0.0,
+  "case_ids": [
+    "prompt_002",
+    "prompt_003",
+    "prompt_005",
+    "prompt_006",
+    "prompt_008",
+    "prompt_009"
+  ],
+  "summary": {
+    "total": 6,
+    "completed": 6,
+    "errors": 0,
+    "passed": 4,
+    "failed": 2
+  },
+  "results": [
+    {
+      "case_id": "prompt_002",
+      "category": "format_constraint",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "length",
+      "response": "*   Accelerates the development cycle by enabling rapid feedback loops and allowing teams to",
+      "evaluation": {
+        "passed": false,
+        "checks": {
+          "must_include:automated testing": false,
+          "non_empty_output": true,
+          "exactly_three_bullet_lines": false
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "Each bullet describes a distinct, relevant benefit."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 5387.785699975211,
+        "prompt_eval_count": 36,
+        "eval_count": 16,
+        "total_duration_ns": 5376909300,
+        "load_duration_ns": 10622000,
+        "prompt_eval_duration_ns": 1714074000,
+        "eval_duration_ns": 3381718000
+      }
+    },
+    {
+      "case_id": "prompt_003",
+      "category": "conciseness",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "length",
+      "response": "An API adapter is a software component that translates requests and responses between different API formats",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "must_include:adapter": true,
+          "non_empty_output": true,
+          "at_most_two_sentences_approx": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The explanation is concise and technically accurate."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 4699.827799980994,
+        "prompt_eval_count": 36,
+        "eval_count": 16,
+        "total_duration_ns": 4694463600,
+        "load_duration_ns": 6989300,
+        "prompt_eval_duration_ns": 1534142000,
+        "eval_duration_ns": 2975668000
+      }
+    },
+    {
+      "case_id": "prompt_005",
+      "category": "conversation_context",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "You said you were comparing REST with **GraphQL**.",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "must_include:GraphQL": true,
+          "non_empty_output": true,
+          "contains_required_phrase": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The response correctly uses the earlier conversation context."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 2480.175600008806,
+        "prompt_eval_count": 75,
+        "eval_count": 11,
+        "total_duration_ns": 2477131300,
+        "load_duration_ns": 9616800,
+        "prompt_eval_duration_ns": 1295707000,
+        "eval_duration_ns": 1017862000
+      }
+    },
+    {
+      "case_id": "prompt_006",
+      "category": "uncertainty_handling",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "length",
+      "response": "I cannot predict the exact latency your local model will achieve tomorrow at 3 PM",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "non_empty_output": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The response does not claim to know an exact future latency and explains what measurement would be needed."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 3311.9161000067834,
+        "prompt_eval_count": 50,
+        "eval_count": 16,
+        "total_duration_ns": 3307904400,
+        "load_duration_ns": 5181200,
+        "prompt_eval_duration_ns": 1294460000,
+        "eval_duration_ns": 1667150000
+      }
+    },
+    {
+      "case_id": "prompt_008",
+      "category": "clarification_request",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "What specific text, code, or item would you like me to improve?",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "non_empty_output": true,
+          "contains_question_mark": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The response asks what 'it' refers to or what kind of improvement is wanted."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 4394.738100003451,
+        "prompt_eval_count": 41,
+        "eval_count": 16,
+        "total_duration_ns": 4384137400,
+        "load_duration_ns": 6143200,
+        "prompt_eval_duration_ns": 1226836000,
+        "eval_duration_ns": 2999716000
+      }
+    },
+    {
+      "case_id": "prompt_009",
+      "category": "structured_output",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "length",
+      "response": "{\n  \"category\": \"Connectivity\",\n  \"summary\": \"",
+      "evaluation": {
+        "passed": false,
+        "checks": {
+          "must_include:category": true,
+          "must_include:summary": true,
+          "must_include:recommended_action": false,
+          "must_not_include:```": true,
+          "non_empty_output": true,
+          "valid_json_object": false,
+          "required_keys_present": false,
+          "string_values": false
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The category and recommended action are appropriate for a local runtime connection failure."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 3410.8868000039365,
+        "prompt_eval_count": 64,
+        "eval_count": 16,
+        "total_duration_ns": 3406965700,
+        "load_duration_ns": 7115900,
+        "prompt_eval_duration_ns": 1279168000,
+        "eval_duration_ns": 1985898000
+      }
+    }
+  ]
+}

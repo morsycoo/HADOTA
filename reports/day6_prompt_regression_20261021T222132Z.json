@@ -1,0 +1,90 @@
+{
+  "timestamp_utc": "2026-10-21T22:21:32.555997+00:00",
+  "model_configured": "qwen3.8:27b",
+  "ollama_host": "http://127.0.0.1:11434",
+  "request_timeout_seconds": 120.0,
+  "num_ctx": 4096,
+  "max_new_tokens": 128,
+  "temperature": 0.0,
+  "case_ids": [
+    "prompt_002",
+    "prompt_009"
+  ],
+  "summary": {
+    "total": 2,
+    "completed": 2,
+    "errors": 0,
+    "passed": 2,
+    "failed": 0
+  },
+  "results": [
+    {
+      "case_id": "prompt_002",
+      "category": "format_constraint",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "*   Accelerates the development cycle by enabling rapid feedback loops and allowing teams to run extensive test suites in a fraction of the time required for manual execution.\n*   Enhances software reliability and consistency by eliminating human error and ensuring that identical test scenarios are executed precisely every time.\n*   Reduces long-term costs by freeing up skilled engineers to focus on complex exploratory testing and new feature development rather than repetitive regression tasks.",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "non_empty_output": true,
+          "exactly_three_bullet_lines": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "Each bullet describes a distinct, relevant benefit."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 17253.369899990503,
+        "prompt_eval_count": 36,
+        "eval_count": 87,
+        "total_duration_ns": 17240153500,
+        "load_duration_ns": 16949800,
+        "prompt_eval_duration_ns": 1406386000,
+        "eval_duration_ns": 15555267000
+      }
+    },
+    {
+      "case_id": "prompt_009",
+      "category": "structured_output",
+      "status": "completed",
+      "model": "qwen3.8:27b",
+      "done": true,
+      "done_reason": "stop",
+      "response": "{\n  \"category\": \"Connectivity\",\n  \"summary\": \"The application is unable to establish a connection with the local Ollama server.\",\n  \"recommended_action\": \"Verify that the Ollama service is running and check the network configuration, including the host address and port settings.\"\n}",
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "must_include:category": true,
+          "must_include:summary": true,
+          "must_include:recommended_action": true,
+          "must_not_include:```": true,
+          "non_empty_output": true,
+          "valid_json_object": true,
+          "required_keys_present": true,
+          "string_values": true
+        }
+      },
+      "human_review": {
+        "status": "pending",
+        "criteria": [
+          "The category and recommended action are appropriate for a local runtime connection failure."
+        ]
+      },
+      "metrics": {
+        "client_latency_ms": 9095.309700001962,
+        "prompt_eval_count": 64,
+        "eval_count": 65,
+        "total_duration_ns": 9091138700,
+        "load_duration_ns": 4192600,
+        "prompt_eval_duration_ns": 1266548000,
+        "eval_duration_ns": 7648393000
+      }
+    }
+  ]
+}
