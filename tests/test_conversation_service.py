@@ -761,6 +761,145 @@ def test_send_message_uses_runtime_defaults_when_options_are_none(
     assert context_call.kwargs["max_new_tokens"] == 64
 
 
+def test_continue_message_merges_text_without_adding_a_user_turn(
+    service,
+    runtime,
+    conversation,
+):
+    runtime.generate.return_value = GenerationResult(
+        text=" continued.",
+        model="qwen3.8:27b",
+        done=True,
+        done_reason="stop",
+    )
+    runtime.generate.side_effect = [
+        GenerationResult(
+            text="Initial partial",
+            model="qwen3.8:27b",
+            done=True,
+            done_reason="length",
+        ),
+        GenerationResult(
+            text=" continued.",
+            model="qwen3.8:27b",
+            done=True,
+            done_reason="stop",
+        ),
+    ]
+
+    service.send_message("Explain AI.")
+    assert service.continuation_available is True
+
+    result = service.continue_message()
+
+    messages = conversation.get_messages(include_system=False)
+    assert [message.role for message in messages] == ["user", "assistant"]
+    assert messages[0].content == "Explain AI."
+    assert messages[1].content == "Initial partial continued."
+    assert result.text == "Initial partial continued."
+    assert service.continuation_available is False
+
+    request = runtime.generate.call_args.args[0]
+    assert "Initial partial" in request.prompt
+    assert "Do not repeat or summarize any text already written." in request.prompt
+
+
+
+def test_continue_message_removes_echoed_previous_response(
+    service,
+    runtime,
+    conversation,
+):
+    runtime.generate.side_effect = [
+        GenerationResult(
+            text="Opening answer. Ending answer.",
+            model="qwen3.8:27b",
+            done=True,
+            done_reason="length",
+        ),
+        GenerationResult(
+            text="Opening answer. Ending answer. Additional details.",
+            model="qwen3.8:27b",
+            done=True,
+            done_reason="stop",
+        ),
+    ]
+
+    service.send_message("Explain AI.")
+    result = service.continue_message()
+
+    assert result.text == "Opening answer. Ending answer. Additional details."
+    messages = conversation.get_messages(include_system=False)
+    assert [message.role for message in messages] == ["user", "assistant"]
+    assert messages[-1].content == result.text
+    assert service.continuation_available is False
+
+
+def test_continue_message_removes_suffix_prefix_overlap(
+    service,
+    runtime,
+    conversation,
+):
+    runtime.generate.side_effect = [
+        GenerationResult(
+            text="The answer ends here",
+            model="qwen3.8:27b",
+            done=True,
+            done_reason="length",
+        ),
+        GenerationResult(
+            text="here and continues.",
+            model="qwen3.8:27b",
+            done=True,
+            done_reason="stop",
+        ),
+    ]
+
+    service.send_message("Explain AI.")
+    result = service.continue_message()
+
+    assert result.text == "The answer ends here and continues."
+    assert conversation.get_messages(include_system=False)[-1].content == result.text
+
+
+def test_continue_message_is_unavailable_after_normal_completion(
+    service,
+    runtime,
+):
+    service.send_message("Hello.")
+
+    assert service.continuation_available is False
+
+    with pytest.raises(ValueError, match="no incomplete assistant response"):
+        service.continue_message()
+
+
+def test_continue_message_remains_available_if_continuation_hits_token_limit(
+    service,
+    runtime,
+):
+    runtime.generate.side_effect = [
+        GenerationResult(
+            text="Part one.",
+            model="qwen3.8:27b",
+            done=True,
+            done_reason="length",
+        ),
+        GenerationResult(
+            text=" Part two.",
+            model="qwen3.8:27b",
+            done=True,
+            done_reason="length",
+        ),
+    ]
+
+    service.send_message("Explain AI.")
+    result = service.continue_message()
+
+    assert result.text == "Part one. Part two."
+    assert service.continuation_available is True
+
+
 def test_send_structured_message_returns_validated_data(service, runtime):
     """Return parsed data when the generated JSON matches the schema."""
     runtime.generate.return_value = GenerationResult(

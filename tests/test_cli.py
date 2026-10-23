@@ -398,3 +398,22 @@ def test_incomplete_generation_does_not_terminate_cli(
     ) in output
     assert "Goodbye!" in output
     assert service.normal_calls == ["Hello"]
+
+def test_shared_runtime_factory_creates_independent_services():
+    from unittest.mock import Mock
+
+    from app.cli import create_conversation_service_with_runtime
+
+    runtime = Mock()
+    runtime.settings = Mock()
+
+    first_service = create_conversation_service_with_runtime(runtime)
+    second_service = create_conversation_service_with_runtime(runtime)
+
+    assert first_service is not second_service
+    assert first_service.conversation is not second_service.conversation
+    assert first_service._runtime is runtime
+    assert second_service._runtime is runtime
+
+    runtime.close.assert_not_called()
+

@@ -46,6 +46,40 @@ def test_user_and_assistant_messages_preserve_order() -> None:
     ]
 
 
+def test_replace_last_assistant_message_preserves_message_order() -> None:
+    manager = ConversationManager()
+    manager.add_user_message("Explain AI.")
+    manager.add_assistant_message("The answer is incomplete.")
+
+    replaced = manager.replace_last_assistant_message(
+        "The answer is now complete."
+    )
+
+    messages = manager.get_messages(include_system=False)
+    assert replaced.content == "The answer is now complete."
+    assert [message.role for message in messages] == ["user", "assistant"]
+    assert messages[-1].content == "The answer is now complete."
+    assert manager.message_count == 2
+
+
+def test_replace_last_assistant_message_requires_assistant_at_end() -> None:
+    manager = ConversationManager()
+    manager.add_user_message("A question.")
+
+    with pytest.raises(ValueError):
+        manager.replace_last_assistant_message("An answer.")
+
+
+def test_replace_last_assistant_message_rejects_blank_content() -> None:
+    manager = ConversationManager()
+    manager.add_assistant_message("Original answer.")
+
+    with pytest.raises(ValidationError):
+        manager.replace_last_assistant_message("   ")
+
+    assert manager.get_messages(include_system=False)[-1].content == "Original answer."
+
+
 def test_message_count_excludes_system_message() -> None:
     manager = ConversationManager(system_prompt="You are a helpful AI assistant.")
 

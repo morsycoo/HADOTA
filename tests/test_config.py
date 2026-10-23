@@ -166,3 +166,146 @@ def test_unknown_configuration_fields_are_rejected() -> None:
 
     with pytest.raises(ValidationError):
         RuntimeSettings(unsupported_option="unexpected")
+
+def test_allowed_origins_configuration() -> None:
+    """Verify allowed origins default and environment override."""
+
+    defaults = load_settings(environ={})
+    assert defaults.allowed_origins == ""
+
+    settings = load_settings(
+        environ={
+            "ALLOWED_ORIGINS": "http://127.0.0.1:8000,http://localhost:8000"
+        }
+    )
+    assert settings.allowed_origins == (
+        "http://127.0.0.1:8000,http://localhost:8000"
+    )
+
+
+def test_security_settings_load_from_env_file_and_environment(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify security settings load from .env and environment overrides."""
+
+    monkeypatch.delenv("COOKIE_SECURE", raising=False)
+    monkeypatch.delenv("ALLOWED_ORIGINS", raising=False)
+
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "\n".join(
+            [
+                "COOKIE_SECURE=true",
+                "ALLOWED_ORIGINS=http://localhost:8000",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    file_settings = load_settings(env_file=env_file)
+
+    assert file_settings.cookie_secure is True
+    assert file_settings.allowed_origins == "http://localhost:8000"
+
+    monkeypatch.setenv("COOKIE_SECURE", "false")
+    monkeypatch.setenv(
+        "ALLOWED_ORIGINS",
+        "https://example.com",
+    )
+
+    overridden_settings = load_settings(env_file=env_file)
+
+    assert overridden_settings.cookie_secure is False
+    assert overridden_settings.allowed_origins == "https://example.com"
+
+
+def test_public_mode_defaults_to_false() -> None:
+    """Keep public mode disabled by default."""
+
+    settings = load_settings(environ={})
+
+    assert settings.public_mode is False
+
+
+def test_public_mode_loads_from_env_file(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Load public mode from .env when no explicit environment is injected."""
+
+    monkeypatch.delenv("PUBLIC_MODE", raising=False)
+
+    env_file = tmp_path / ".env"
+    env_file.write_text("PUBLIC_MODE=true" + chr(10), encoding="utf-8")
+
+    settings = load_settings(env_file=env_file)
+
+    assert settings.public_mode is True
+
+
+def test_public_mode_environment_overrides_env_file(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Allow the process environment to override the .env value."""
+
+    env_file = tmp_path / ".env"
+    env_file.write_text("PUBLIC_MODE=true" + chr(10), encoding="utf-8")
+
+    monkeypatch.setenv("PUBLIC_MODE", "false")
+
+    settings = load_settings(env_file=env_file)
+
+    assert settings.public_mode is False
+
+
+def test_validate_public_mode_settings_keeps_local_mode_unchanged() -> None:
+    """Local mode must not require public deployment settings."""
+
+    from app.config import validate_public_mode_settings
+
+    validate_public_mode_settings(RuntimeSettings())
+
+
+def test_validate_public_mode_settings_accepts_secure_https_origin() -> None:
+    """Accept public mode with secure cookies and an HTTPS origin."""
+
+    from app.config import validate_public_mode_settings
+
+    settings = RuntimeSettings(
+        public_mode=True,
+        cookie_secure=True,
+        allowed_origins="https://example.com",
+    )
+
+    validate_public_mode_settings(settings)
+
+
+@pytest.mark.parametrize(
+    ("cookie_secure", "allowed_origins"),
+    [
+        (False, "https://example.com"),
+        (True, ""),
+        (True, "http://example.com"),
+        (True, "not-a-valid-origin"),
+        (True, "https://example.com/path"),
+        (True, "https://user@example.com"),
+    ],
+)
+def test_validate_public_mode_settings_rejects_unsafe_configuration(
+    cookie_secure: bool,
+    allowed_origins: str,
+) -> None:
+    """Reject incomplete or unsafe public-mode settings."""
+
+    from app.config import validate_public_mode_settings
+
+    settings = RuntimeSettings(
+        public_mode=True,
+        cookie_secure=cookie_secure,
+        allowed_origins=allowed_origins,
+    )
+
+    with pytest.raises(ValueError):
+        validate_public_mode_settings(settings)
