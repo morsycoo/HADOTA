@@ -93,6 +93,19 @@ class ConversationManager:
 
         return self._add_message("assistant", content)
 
+    def replace_last_assistant_message(
+        self,
+        content: str,
+    ) -> ConversationMessage:
+        """Replace the most recent assistant message."""
+
+        if not self._messages or self._messages[-1].role != "assistant":
+            raise ValueError("The last conversation message is not an assistant message.")
+
+        message = ConversationMessage(role="assistant", content=content)
+        self._messages[-1] = message
+        return message
+
     def get_messages(
         self,
         *,

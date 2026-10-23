@@ -23,6 +23,9 @@ class RuntimeSettings(BaseModel):
 
     ollama_host: str = "http://127.0.0.1:11434"
     model_name: str = "qwen3.8:27b"
+    cookie_secure: bool = False
+    allowed_origins: str = ""
+    public_mode: bool = False
 
     request_timeout_seconds: float = Field(
         default=120.0,
@@ -39,7 +42,7 @@ class RuntimeSettings(BaseModel):
     )
 
     max_new_tokens: int = Field(
-        default=16,
+        default=512,
         ge=1,
         le=512,
     )
@@ -128,6 +131,9 @@ class RuntimeSettings(BaseModel):
 ENV_FIELD_MAPPING = {
     "OLLAMA_HOST": "ollama_host",
     "MODEL_NAME": "model_name",
+    "COOKIE_SECURE": "cookie_secure",
+    "ALLOWED_ORIGINS": "allowed_origins",
+    "PUBLIC_MODE": "public_mode",
     "REQUEST_TIMEOUT_SECONDS": "request_timeout_seconds",
     "KEEP_ALIVE": "keep_alive",
     "NUM_CTX": "num_ctx",
@@ -198,3 +204,55 @@ def load_settings(
     }
 
     return RuntimeSettings.model_validate(settings_values)
+
+
+def validate_public_mode_settings(settings: RuntimeSettings) -> None:
+    """Require essential cookie and origin settings for public mode."""
+
+    if not settings.public_mode:
+        return
+
+    if not settings.cookie_secure:
+        raise ValueError(
+            "PUBLIC_MODE requires COOKIE_SECURE=true."
+        )
+
+    origins = [
+        item.strip()
+        for item in settings.allowed_origins.split(",")
+        if item.strip()
+    ]
+
+    if not origins:
+        raise ValueError(
+            "PUBLIC_MODE requires at least one ALLOWED_ORIGINS entry."
+        )
+
+    for origin in origins:
+        try:
+            parsed = urlsplit(origin)
+            port = parsed.port
+        except ValueError as error:
+            raise ValueError(
+                "PUBLIC_MODE requires valid HTTP(S) origins."
+            ) from error
+
+        if (
+            parsed.scheme.lower() not in {"http", "https"}
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.path not in {"", "/"}
+            or parsed.query
+            or parsed.fragment
+            or (port is not None and not 1 <= port <= 65535)
+        ):
+            raise ValueError(
+                "PUBLIC_MODE requires valid HTTP(S) origins without paths, "
+                "credentials, queries, or fragments."
+            )
+
+        if parsed.scheme.lower() != "https":
+            raise ValueError(
+                "PUBLIC_MODE requires HTTPS origins."
+            )

@@ -17,6 +17,10 @@ from app.structured_output import (
 )
 
 
+HADOTA_SYSTEM_PROMPT = (
+"You are HADOTA, a local AI assistant. The Arabic brand name is حَدُّوتَة. Only introduce yourself when the user explicitly asks who you are or asks about your identity. Otherwise, answer the user's request directly without greetings, self-introductions, or unnecessary preambles. When the user writes in Arabic, reply in natural Arabic, preferably Egyptian Arabic. Answer every part of the user's question. If the user asks multiple questions, address each one clearly instead of answering only the first. For identity questions in Arabic, introduce yourself as: أنا حَدُّوتَة، مساعدك الذكي المحلي. أقدر أساعدك إزاي النهارده؟ Be helpful, honest, concise but complete, and conversational. Never claim to be human or invent capabilities you do not have.")
+
+
 # Keep the first CLI version independent of external tokenizer files.
 def create_conversation_service(
     settings: RuntimeSettings | None = None,
@@ -26,7 +30,7 @@ def create_conversation_service(
     resolved_settings = settings or load_settings()
 
     runtime = OllamaRuntime(settings=resolved_settings)
-    conversation = ConversationManager()
+    conversation = ConversationManager(system_prompt=HADOTA_SYSTEM_PROMPT)
     prompt_builder = PromptBuilder()
 
     service = ConversationService(
@@ -37,6 +41,22 @@ def create_conversation_service(
     )
 
     return runtime, service
+
+
+def create_conversation_service_with_runtime(
+    runtime: OllamaRuntime,
+) -> ConversationService:
+    """Create an independent conversation service using a shared runtime."""
+
+    conversation = ConversationManager(system_prompt=HADOTA_SYSTEM_PROMPT)
+    prompt_builder = PromptBuilder()
+
+    return ConversationService(
+        runtime=runtime,
+        conversation=conversation,
+        prompt_builder=prompt_builder,
+        settings=runtime.settings,
+    )
 
 
 def _print_help() -> None:

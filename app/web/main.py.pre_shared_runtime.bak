@@ -1,0 +1,81 @@
+﻿"""FastAPI application entry point for HADOTA."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from contextlib import asynccontextmanager
+from typing import Any
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+from app.cli import create_conversation_service
+from app.runtime.exceptions import RuntimeErrorBase
+
+ServiceFactory = Callable[..., tuple[Any, Any]]
+
+
+def create_app(
+    service_factory: ServiceFactory | None = None,
+) -> FastAPI:
+    """Create the HADOTA API application."""
+
+    factory = service_factory or create_conversation_service
+
+    @asynccontextmanager
+    async def lifespan(application: FastAPI):
+        runtime = None
+
+        try:
+            runtime, service = factory()
+            application.state.runtime = runtime
+            application.state.conversation_service = service
+            yield
+        finally:
+            application.state.runtime = None
+            application.state.conversation_service = None
+
+            if runtime is not None:
+                runtime.close()
+
+    application = FastAPI(
+        title="HADOTA — Local AI Assistant",
+        version="0.1.0",
+        lifespan=lifespan,
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
+
+    @application.get("/api/health")
+    async def health(request: Request) -> JSONResponse:
+        """Return a minimal health status without exposing runtime details."""
+
+        runtime = getattr(request.app.state, "runtime", None)
+
+        if runtime is None:
+            return JSONResponse(
+                status_code=503,
+                content={"status": "unavailable"},
+            )
+
+        try:
+            available = runtime.health()
+        except RuntimeErrorBase:
+            available = False
+
+        if not available:
+            return JSONResponse(
+                status_code=503,
+                content={"status": "unavailable"},
+            )
+
+        return JSONResponse(
+            status_code=200,
+            content={"status": "ok"},
+        )
+
+    return application
+
+
+app = create_app()
