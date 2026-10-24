@@ -66,6 +66,7 @@ The figures above describe a specific recorded run and development environment. 
 
 <p align="center">
   <a href="assets/HADOTA_Local_AI_Assistant.mp4">
+    ▶️ Watch or download the full demo video
   </a>
 </p>
 </div>
