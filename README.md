@@ -768,7 +768,7 @@ These are resource guardrails, not measured throughput limits. Public mode has a
 
 ### AI Engineer | LLM Applications | Machine Learning
 
-*Building practical AI systems — from model experimentation to reliable, user-facing applications.*
+*Building practical AI systems from model experimentation to reliable, user-facing applications.*
 
 <br>
 
@@ -803,7 +803,7 @@ HADOTA represents this approach by bringing together local LLM inference, a web 
 
 ### 🤝 Let's Connect
 
-Interested in AI engineering, LLM applications, open-source projects, or technical collaboration?
+If you're interested in AI engineering, LLM applications, open-source projects, or technical collaboration?
 
 Reach out through **[GitHub](https://github.com/morsycoo)** or **[LinkedIn](https://www.linkedin.com/in/morsycoo)**.
 
