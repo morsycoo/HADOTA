@@ -1,13 +1,24 @@
 <div align="center">
-  <img src="assets/hadota-hero.jpg" alt="HADOTA — حَدُّوتَة, a local AI assistant inspired by Egyptian storytelling" width="100%" />
-
+  
   # حَدُّوتَة | HADOTA
-
   ### From tokenization experiments to a hardened local AI assistant
 
 <p align="center">
   <img src="assets/HADOTA_حَدُّوتَة.png" alt="HADOTA (حَدُّوتَة) — Your Local AI Assistant" width="900">
 </p>
+  <p>
+    <a href="https://github.com/morsycoo/HADOTA"><img alt="Repository" src="https://img.shields.io/badge/Project-HADOTA-171717?style=for-the-badge&logo=github&logoColor=white"></a>
+    <img alt="Python 3.13" src="https://img.shields.io/badge/Python-3.13-3776AB?style=for-the-badge&logo=python&logoColor=white">
+    <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white">
+    <img alt="Ollama" src="https://img.shields.io/badge/Ollama-Local_Inference-black?style=for-the-badge">
+    <img alt="Qwen" src="https://img.shields.io/badge/Model-Qwen3.8%3A27B-7C3AED?style=for-the-badge">
+  </p>
+  <p>
+    <img alt="Tests" src="https://img.shields.io/badge/Tests-366%20passed-2E8B57?style=for-the-badge">
+    <img alt="Coverage" src="https://img.shields.io/badge/Coverage-91%25-2E8B57?style=for-the-badge">
+    <img alt="Deployment" src="https://img.shields.io/badge/Deployment-Local--First-D4A85A?style=for-the-badge">
+  </p>
+
 </div>
 
 > **HADOTA (حَدُّوتَة)** takes its name from the Egyptian Arabic word for a story or tale. Inspired by a great storyteller's curiosity, HADOTA is a local AI companion designed to make learning, exploring ideas, and having meaningful conversations feel natural and engaging.
