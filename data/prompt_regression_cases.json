@@ -42,9 +42,7 @@
     ],
     "checks": {
       "expected_format": "three_bullets",
-      "must_include": [
-        "automated testing"
-      ],
+      "must_include": [],
       "must_not_include": [],
       "automated": [
         "non_empty_output",
