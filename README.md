@@ -13,6 +13,7 @@ HADOTA brings the spirit of a curious storyteller to local AI.
 
 HADOTA is a locally run Arabic/English chat application. It serves a small browser UI and a FastAPI API from one origin, while using the existing local Ollama runtime and the configured `qwen3.8:27b` model. The web app currently uses a **non-streaming request/response path**; streaming in the browser is not claimed as complete.
 
+<p align="center">
 </p>
   <p>
     <a href="https://github.com/morsycoo/HADOTA"><img alt="Repository" src="https://img.shields.io/badge/Project-HADOTA-171717?style=for-the-badge&logo=github&logoColor=white"></a>
