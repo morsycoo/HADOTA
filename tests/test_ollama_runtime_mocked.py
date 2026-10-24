@@ -267,7 +267,7 @@ def test_generate_success_normalizes_response_and_payload() -> None:
 
         assert captured_payload["options"] == {
             "num_ctx": 4096,
-            "num_predict": 16,
+            "num_predict": 512,
             "temperature": 0.0,
         }
 

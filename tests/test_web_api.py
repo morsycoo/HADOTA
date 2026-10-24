@@ -1,4 +1,4 @@
-﻿"""Tests for the initial HADOTA web API."""
+"""Tests for the initial HADOTA web API."""
 
 from unittest.mock import Mock
 
@@ -24,7 +24,7 @@ def make_service_factory(runtime: Mock, service: Mock):
     return factory
 
 
-def test_health_returns_ok_when_runtime_is_healthy():
+def test_health_reports_web_liveness_even_when_runtime_is_healthy():
     runtime = make_runtime(healthy=True)
     service = Mock()
     app = create_app(make_service_factory(runtime, service))
@@ -34,11 +34,11 @@ def test_health_returns_ok_when_runtime_is_healthy():
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
-    runtime.health.assert_called_once_with()
+    runtime.health.assert_not_called()
     runtime.close.assert_called_once_with()
 
 
-def test_health_returns_503_when_runtime_is_unhealthy():
+def test_health_remains_ok_when_runtime_is_unhealthy():
     runtime = make_runtime(healthy=False)
     service = Mock()
     app = create_app(make_service_factory(runtime, service))
@@ -46,12 +46,42 @@ def test_health_returns_503_when_runtime_is_unhealthy():
     with TestClient(app) as client:
         response = client.get("/api/health")
 
-    assert response.status_code == 503
-    assert response.json() == {"status": "unavailable"}
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+    runtime.health.assert_not_called()
     runtime.close.assert_called_once_with()
 
 
-def test_health_hides_runtime_errors():
+def test_readiness_returns_unavailable_when_runtime_is_unhealthy():
+    runtime = make_runtime(healthy=False)
+    service = Mock()
+    app = create_app(make_service_factory(runtime, service))
+
+    with TestClient(app) as client:
+        response = client.get("/api/ready")
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "status": "unavailable",
+        "reason": "runtime_unavailable",
+    }
+    runtime.health.assert_called_once_with()
+
+
+def test_readiness_returns_ready_when_runtime_is_healthy():
+    runtime = make_runtime(healthy=True)
+    service = Mock()
+    app = create_app(make_service_factory(runtime, service))
+
+    with TestClient(app) as client:
+        response = client.get("/api/ready")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready"}
+    runtime.health.assert_called_once_with()
+
+
+def test_health_does_not_leak_runtime_errors():
     from app.runtime.exceptions import RuntimeConnectionError
 
     runtime = make_runtime()
@@ -62,10 +92,13 @@ def test_health_hides_runtime_errors():
     app = create_app(make_service_factory(runtime, service))
 
     with TestClient(app) as client:
-        response = client.get("/api/health")
+        response = client.get("/api/ready")
 
     assert response.status_code == 503
-    assert response.json() == {"status": "unavailable"}
+    assert response.json() == {
+        "status": "unavailable",
+        "reason": "runtime_unavailable",
+    }
     assert "Internal runtime connection details" not in response.text
 
 
@@ -101,7 +134,7 @@ def test_session_manager_closes_all_sessions_when_application_stops(monkeypatch)
     monkeypatch.setattr(
         main,
         "SessionManager",
-        lambda: session_manager,
+        lambda **kwargs: session_manager,
     )
 
     app = create_app(make_service_factory(runtime, service))
@@ -112,3 +145,23 @@ def test_session_manager_closes_all_sessions_when_application_stops(monkeypatch)
     session_manager.close_all.assert_called_once_with()
     runtime.close.assert_called_once_with()
 
+
+
+def test_readiness_rejects_missing_configured_model():
+    from app.config import RuntimeSettings
+
+    runtime = make_runtime(healthy=True)
+    runtime.list_models.return_value = ["other-model:latest"]
+    service = Mock()
+    app = create_app(make_service_factory(runtime, service))
+    app.state.settings = RuntimeSettings(model_name="qwen3.8:27b")
+
+    with TestClient(app) as client:
+        response = client.get("/api/ready")
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "status": "unavailable",
+        "reason": "model_unavailable",
+    }
+    runtime.list_models.assert_called_once_with()

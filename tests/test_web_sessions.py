@@ -1,10 +1,12 @@
-﻿"""Tests for anonymous session lifecycle management."""
+"""Tests for anonymous session lifecycle management."""
 
 import pytest
 
 from app.web.sessions import (
+    ConversationBusyError,
     ConversationLimitError,
     SessionLimitError,
+    SessionRateLimitError,
     SessionManager,
     SessionNotFoundError,
 )
@@ -561,3 +563,231 @@ def test_close_all_is_idempotent():
 
     assert manager.active_session_count == 0
     service.close.assert_called_once_with()
+
+
+def test_nonblocking_conversation_operation_rejects_busy_lock(manager):
+    session = manager.create_session()
+    entry = manager.create_conversation(session.session_id, service_factory=object)
+    assert entry.lock.acquire(blocking=False)
+    try:
+        with pytest.raises(ConversationBusyError):
+            with manager.conversation_operation(
+                session.session_id,
+                entry.conversation_id,
+                blocking=False,
+            ):
+                pass
+    finally:
+        entry.lock.release()
+
+
+def test_nonblocking_delete_rejects_busy_conversation(manager):
+    session = manager.create_session()
+    entry = manager.create_conversation(session.session_id, service_factory=object)
+    assert entry.lock.acquire(blocking=False)
+    try:
+        with pytest.raises(ConversationBusyError):
+            manager.delete_conversation(
+                session.session_id,
+                entry.conversation_id,
+                blocking=False,
+            )
+        assert manager.get_conversation(session.session_id, entry.conversation_id) is entry
+    finally:
+        entry.lock.release()
+
+
+def test_session_rate_limit_uses_sliding_window(manager, clock):
+    session = manager.create_session()
+    manager.enforce_request_rate_limit(
+        session.session_id,
+        max_requests=2,
+        window_seconds=30,
+    )
+    manager.enforce_request_rate_limit(
+        session.session_id,
+        max_requests=2,
+        window_seconds=30,
+    )
+    with pytest.raises(SessionRateLimitError):
+        manager.enforce_request_rate_limit(
+            session.session_id,
+            max_requests=2,
+            window_seconds=30,
+        )
+
+    clock.advance(31)
+    manager.enforce_request_rate_limit(
+        session.session_id,
+        max_requests=2,
+        window_seconds=30,
+    )
+
+
+def test_global_generation_rate_limit_is_shared_across_sessions(manager, clock):
+    first = manager.create_session()
+    second = manager.create_session()
+    manager.enforce_global_generation_rate_limit(
+        max_requests=1,
+        window_seconds=30,
+    )
+    with pytest.raises(SessionRateLimitError):
+        manager.enforce_global_generation_rate_limit(
+            max_requests=1,
+            window_seconds=30,
+        )
+    clock.advance(31)
+    manager.enforce_global_generation_rate_limit(
+        max_requests=1,
+        window_seconds=30,
+    )
+    # Both sessions exist; the limiter itself is process-wide, not per session.
+    assert manager.get_session(first.session_id) is first
+    assert manager.get_session(second.session_id) is second
+
+
+def test_page_close_request_expires_after_grace_without_activity(clock):
+    manager = SessionManager(
+        max_sessions=2,
+        max_conversations_per_session=2,
+        idle_ttl_seconds=60,
+        absolute_ttl_seconds=180,
+        close_grace_seconds=10,
+        clock=clock,
+    )
+    session = manager.create_session()
+
+    assert manager.request_session_close(session.session_id) is True
+    clock.advance(9)
+    assert manager.get_session(session.session_id) is session
+    assert session.close_requested_at is None
+
+    assert manager.request_session_close(session.session_id) is True
+    clock.advance(10)
+    assert manager.cleanup_expired() == 1
+    assert manager.active_session_count == 0
+
+
+def test_activity_during_close_grace_preserves_session(manager, clock):
+    session = manager.create_session()
+    assert manager.request_session_close(session.session_id) is True
+    clock.advance(10)
+
+    assert manager.get_session(session.session_id) is session
+    assert session.close_requested_at is None
+
+
+def test_session_cleanup_does_not_hold_session_lock_while_waiting_for_entry_lock(manager):
+    import threading
+    import time
+
+    class ObservedLock:
+        def __init__(self):
+            self._inner = threading.Lock()
+            self.waiting = threading.Event()
+
+        def acquire(self, blocking=True, timeout=-1):
+            if blocking:
+                self.waiting.set()
+            if timeout == -1:
+                return self._inner.acquire(blocking)
+            return self._inner.acquire(blocking, timeout)
+
+        def release(self):
+            self._inner.release()
+
+        def __enter__(self):
+            self.acquire()
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            self.release()
+            return False
+
+    session = manager.create_session()
+    entry = manager.create_conversation(session.session_id, service_factory=object)
+    entry.lock = ObservedLock()
+    assert entry.lock.acquire(blocking=False)
+    entry.lock.waiting.clear()
+
+    cleanup_done = threading.Event()
+
+    def remove_session():
+        try:
+            manager.delete_session(session.session_id)
+        finally:
+            cleanup_done.set()
+
+    worker = threading.Thread(target=remove_session, daemon=True)
+    worker.start()
+
+    try:
+        assert entry.lock.waiting.wait(timeout=1.0)
+        # Cleanup should have released session.lock before waiting on entry.lock.
+        acquired = session.lock.acquire(timeout=0.5)
+        assert acquired, "cleanup held session.lock while waiting on the entry lock"
+        session.lock.release()
+    finally:
+        entry.lock.release()
+
+    worker.join(timeout=2.0)
+    assert cleanup_done.is_set(), "session cleanup did not finish"
+    assert manager.active_session_count == 0
+
+
+def test_expired_session_request_does_not_wait_for_active_conversation_lock(manager, clock):
+    import threading
+
+    class ClosingService:
+        def __init__(self):
+            self.closed = threading.Event()
+
+        def close(self):
+            self.closed.set()
+
+    session = manager.create_session()
+    service = ClosingService()
+    entry = manager.create_conversation(
+        session.session_id,
+        service_factory=lambda: service,
+    )
+    assert entry.lock.acquire(blocking=False)
+    clock.advance(60)
+
+    done = threading.Event()
+    errors = []
+
+    def resolve_expired_session():
+        try:
+            manager.get_session(session.session_id)
+        except BaseException as error:
+            errors.append(error)
+        finally:
+            done.set()
+
+    worker = threading.Thread(target=resolve_expired_session, daemon=True)
+    worker.start()
+    try:
+        assert done.wait(timeout=0.5), (
+            "expired-session lookup blocked while waiting on active conversation cleanup"
+        )
+    finally:
+        entry.lock.release()
+
+    worker.join(timeout=1.0)
+    assert errors and isinstance(errors[0], SessionNotFoundError)
+    assert service.closed.wait(timeout=1.0)
+
+
+def test_create_conversation_rechecks_session_ownership_after_lookup(manager, monkeypatch):
+    session = manager.create_session()
+    original_get_session = manager.get_session
+
+    def expire_between_lookup_and_insert(session_id):
+        retrieved = original_get_session(session_id)
+        manager.delete_session(session_id)
+        return retrieved
+
+    monkeypatch.setattr(manager, "get_session", expire_between_lookup_and_insert)
+    with pytest.raises(SessionNotFoundError):
+        manager.create_conversation(session.session_id, service_factory=object)

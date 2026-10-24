@@ -16,7 +16,7 @@ def test_default_settings() -> None:
     assert settings.request_timeout_seconds == 120.0
     assert settings.keep_alive == "5m"
     assert settings.num_ctx == 4096
-    assert settings.max_new_tokens == 16
+    assert settings.max_new_tokens == 512
     assert settings.temperature == 0.0
 
     assert settings.top_k is None
@@ -60,6 +60,17 @@ def test_env_file_and_environment_precedence(
     environment_keys = [
         "OLLAMA_HOST",
         "MODEL_NAME",
+        "MAX_REQUEST_BODY_BYTES",
+        "MAX_MESSAGE_CHARS",
+        "MAX_ACTIVE_SESSIONS",
+        "MAX_CONVERSATIONS_PER_SESSION",
+        "SESSION_IDLE_TTL_SECONDS",
+        "SESSION_ABSOLUTE_TTL_SECONDS",
+        "SESSION_RATE_LIMIT_REQUESTS",
+        "SESSION_RATE_LIMIT_WINDOW_SECONDS",
+        "GLOBAL_GENERATION_RATE_LIMIT_REQUESTS",
+        "GLOBAL_GENERATION_RATE_LIMIT_WINDOW_SECONDS",
+        "MAX_ACTIVE_GENERATIONS",
         "REQUEST_TIMEOUT_SECONDS",
         "KEEP_ALIVE",
         "NUM_CTX",
@@ -309,3 +320,58 @@ def test_validate_public_mode_settings_rejects_unsafe_configuration(
 
     with pytest.raises(ValueError):
         validate_public_mode_settings(settings)
+
+
+def test_web_resource_limits_have_safe_defaults() -> None:
+    settings = load_settings(environ={})
+    assert settings.max_request_body_bytes == 65536
+    assert settings.max_message_chars == 4000
+    assert settings.max_active_sessions == 25
+    assert settings.max_conversations_per_session == 5
+    assert settings.session_idle_ttl_seconds == 900
+    assert settings.session_absolute_ttl_seconds == 14400
+    assert settings.session_rate_limit_requests == 10
+    assert settings.session_rate_limit_window_seconds == 60
+    assert settings.global_generation_rate_limit_requests == 20
+    assert settings.global_generation_rate_limit_window_seconds == 60
+    assert settings.max_active_generations == 1
+
+
+def test_public_mode_rejects_unsafe_resource_limits() -> None:
+    from app.config import validate_public_mode_settings
+
+    settings = RuntimeSettings(
+        public_mode=True,
+        cookie_secure=True,
+        allowed_origins="https://example.com",
+        max_active_sessions=26,
+    )
+    with pytest.raises(ValueError, match="bounded request, message, session"):
+        validate_public_mode_settings(settings)
+
+
+def test_resource_limit_environment_overrides_are_loaded() -> None:
+    settings = load_settings(environ={
+        "MAX_REQUEST_BODY_BYTES": "32768",
+        "MAX_MESSAGE_CHARS": "2000",
+        "MAX_ACTIVE_SESSIONS": "10",
+        "MAX_CONVERSATIONS_PER_SESSION": "3",
+        "SESSION_IDLE_TTL_SECONDS": "600",
+        "SESSION_ABSOLUTE_TTL_SECONDS": "3600",
+        "SESSION_RATE_LIMIT_REQUESTS": "5",
+        "SESSION_RATE_LIMIT_WINDOW_SECONDS": "60",
+        "GLOBAL_GENERATION_RATE_LIMIT_REQUESTS": "12",
+        "GLOBAL_GENERATION_RATE_LIMIT_WINDOW_SECONDS": "60",
+        "MAX_ACTIVE_GENERATIONS": "1",
+    })
+    assert settings.max_request_body_bytes == 32768
+    assert settings.max_message_chars == 2000
+    assert settings.max_active_sessions == 10
+    assert settings.max_conversations_per_session == 3
+    assert settings.session_idle_ttl_seconds == 600
+    assert settings.session_absolute_ttl_seconds == 3600
+    assert settings.session_rate_limit_requests == 5
+    assert settings.session_rate_limit_window_seconds == 60
+    assert settings.global_generation_rate_limit_requests == 12
+    assert settings.global_generation_rate_limit_window_seconds == 60
+    assert settings.max_active_generations == 1

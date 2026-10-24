@@ -1,4 +1,4 @@
-﻿from unittest.mock import Mock
+from unittest.mock import Mock
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
@@ -402,6 +402,9 @@ def test_periodic_cleanup_runs_and_shutdown_waits_for_active_cleanup(monkeypatch
     closed_after_cleanup = []
 
     class TrackingSessionManager:
+        def __init__(self, **kwargs):
+            pass
+
         def cleanup_expired(self):
             cleanup_started.set()
             if not allow_cleanup_to_finish.wait(timeout=5):
@@ -446,7 +449,7 @@ def test_periodic_cleanup_does_not_run_after_shutdown(monkeypatch):
     session_manager = Mock()
 
     monkeypatch.setattr(
-        web_main, "SessionManager", lambda: session_manager
+        web_main, "SessionManager", lambda **kwargs: session_manager
     )
     monkeypatch.setattr(
         web_main, "SESSION_CLEANUP_INTERVAL_SECONDS", 0.05
@@ -461,3 +464,195 @@ def test_periodic_cleanup_does_not_run_after_shutdown(monkeypatch):
 
     session_manager.cleanup_expired.assert_not_called()
     session_manager.close_all.assert_called_once_with()
+
+
+def test_api_request_body_is_bounded():
+    app, _ = make_app()
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/session",
+            content=b"x" * 65537,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+    assert response.status_code == 413
+    assert response.json() == {"error": "Request body too large."}
+    assert response.headers.get("x-request-id")
+
+
+def test_generation_capacity_returns_retryable_busy_response():
+    app, service = make_app()
+    with TestClient(app) as client:
+        assert client.post("/api/session").status_code == 200
+        created = client.post("/api/conversations", json={})
+        conversation_id = created.json()["conversation_id"]
+
+        assert app.state.generation_semaphore.acquire(blocking=False)
+        try:
+            response = client.post(
+                f"/api/conversations/{conversation_id}/messages",
+                json={"content": "Please answer."},
+            )
+        finally:
+            app.state.generation_semaphore.release()
+
+    assert response.status_code == 429
+    assert response.json() == {
+        "error": "The assistant is busy. Please wait and try again."
+    }
+    service.send_message.assert_not_called()
+
+
+def test_busy_conversation_is_rejected_without_blocking_for_lock():
+    app, service = make_app()
+    with TestClient(app) as client:
+        assert client.post("/api/session").status_code == 200
+        created = client.post("/api/conversations", json={})
+        conversation_id = created.json()["conversation_id"]
+        entry = app.state.session_manager.get_conversation(
+            client.cookies.get("hadota_session"),
+            conversation_id,
+        )
+
+        assert entry.lock.acquire(blocking=False)
+        try:
+            response = client.post(
+                f"/api/conversations/{conversation_id}/messages",
+                json={"content": "Please answer."},
+            )
+        finally:
+            entry.lock.release()
+
+        assert response.status_code == 409
+        assert response.json() == {
+            "error": "This conversation is busy. Please try again shortly."
+        }
+        assert app.state.generation_semaphore.acquire(blocking=False)
+        app.state.generation_semaphore.release()
+
+    service.send_message.assert_not_called()
+
+
+def test_session_generation_rate_limit_is_enforced():
+    app, service = make_app()
+    app.state.settings = RuntimeSettings(session_rate_limit_requests=1)
+    service.send_message.return_value = SimpleNamespace(
+        text="One answer",
+        done=True,
+    )
+
+    with TestClient(app) as client:
+        assert client.post("/api/session").status_code == 200
+        created = client.post("/api/conversations", json={})
+        conversation_id = created.json()["conversation_id"]
+
+        first = client.post(
+            f"/api/conversations/{conversation_id}/messages",
+            json={"content": "First request"},
+        )
+        second = client.post(
+            f"/api/conversations/{conversation_id}/messages",
+            json={"content": "Second request"},
+        )
+
+    assert first.status_code == 200
+    assert second.status_code == 429
+    assert second.json() == {
+        "error": "Too many requests. Please wait before trying again."
+    }
+    service.send_message.assert_called_once_with("First request")
+
+
+def test_api_responses_include_generated_request_id():
+    app, _ = make_app()
+    with TestClient(app) as client:
+        response = client.get("/api/health")
+    assert response.status_code == 200
+    assert len(response.headers["x-request-id"]) == 24
+    assert response.headers["x-content-type-options"] == "nosniff"
+
+
+def test_validation_errors_do_not_echo_submitted_content():
+    app, service = make_app()
+    secretish_text = "TOP-SECRET-INPUT-123"
+    with TestClient(app) as client:
+        assert client.post("/api/session").status_code == 200
+        response = client.post(
+            "/api/conversations",
+            json={"unexpected": secretish_text},
+        )
+
+    assert response.status_code == 422
+    assert response.json() == {"error": "Invalid request payload."}
+    assert secretish_text not in response.text
+    service.send_message.assert_not_called()
+
+
+def test_page_close_signal_can_be_cancelled_by_refresh():
+    app, _ = make_app()
+    with TestClient(app) as client:
+        assert client.post("/api/session").status_code == 200
+        created = client.post("/api/conversations", json={})
+        assert created.status_code == 201
+        response = client.post("/api/session/close")
+        assert response.status_code == 200
+        assert response.json() == {"status": "closing"}
+
+        # The first request made after a page refresh cancels the pending close.
+        listing = client.get("/api/conversations")
+
+    assert listing.status_code == 200
+    assert listing.json()["conversations"]
+
+
+def test_injected_conversation_service_factory_creates_independent_services():
+    runtime = make_runtime()
+    setup_service = make_service()
+    created_services = []
+
+    def conversation_service_factory():
+        service = make_service()
+        created_services.append(service)
+        return service
+
+    app = create_app(
+        make_service_factory(runtime, setup_service),
+        conversation_service_factory=conversation_service_factory,
+    )
+
+    with TestClient(app) as client:
+        assert client.post("/api/session").status_code == 200
+        first = client.post("/api/conversations", json={})
+        second = client.post("/api/conversations", json={})
+
+        assert first.status_code == 201
+        assert second.status_code == 201
+        assert len(created_services) == 2
+        assert created_services[0] is not created_services[1]
+        assert (
+            app.state.session_manager.get_conversation(
+                client.cookies.get("hadota_session"),
+                first.json()["conversation_id"],
+            ).service
+            is created_services[0]
+        )
+        assert (
+            app.state.session_manager.get_conversation(
+                client.cookies.get("hadota_session"),
+                second.json()["conversation_id"],
+            ).service
+            is created_services[1]
+        )
+
+
+def test_api_request_body_uses_configured_limit():
+    app, _ = make_app()
+    app.state.settings = RuntimeSettings(max_request_body_bytes=1024)
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/session",
+            content=b"x" * 1025,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+    assert response.status_code == 413
+    assert response.json() == {"error": "Request body too large."}
+    assert response.headers.get("x-request-id")

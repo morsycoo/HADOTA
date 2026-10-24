@@ -231,3 +231,38 @@ def test_invalid_user_message_does_not_change_conversation() -> None:
 
     assert manager.message_count == 1
     assert manager.get_messages(include_system=False)[0].content == ("Valid message.")
+
+
+def test_remove_last_message_if_only_removes_matching_pending_turn():
+    conversation = ConversationManager(system_prompt="system")
+    conversation.add_user_message("earlier question")
+    conversation.add_assistant_message("earlier answer")
+    conversation.add_user_message("failed question")
+
+    assert conversation.remove_last_message_if(
+        role="user",
+        content="different question",
+    ) is False
+    assert conversation.message_count == 3
+
+    assert conversation.remove_last_message_if(
+        role="user",
+        content="failed question",
+    ) is True
+    assert [m.content for m in conversation.get_messages(include_system=False)] == [
+        "earlier question",
+        "earlier answer",
+    ]
+
+
+def test_conversation_snapshots_remain_independent_from_later_mutations():
+    conversation = ConversationManager()
+    conversation.add_user_message("first")
+    snapshot = conversation.get_messages()
+    conversation.add_assistant_message("answer")
+
+    assert [message.content for message in snapshot] == ["first"]
+    assert [message.content for message in conversation.get_messages()] == [
+        "first",
+        "answer",
+    ]

@@ -11,7 +11,12 @@ TOKENIZER_PATH = Path("assets/tokenizers/qwen3.8-27b/tokenizer.json")
 
 @pytest.fixture
 def token_counter() -> TokenCounter:
-    """Create a token counter using the local tokenizer."""
+    """Create a token counter using the optional large local tokenizer asset."""
+    if not TOKENIZER_PATH.is_file():
+        pytest.skip(
+            "Local tokenizer JSON is not included in this checkout; "
+            "provide assets/tokenizers/qwen3.8-27b/tokenizer.json to run these tests."
+        )
     return TokenCounter(TOKENIZER_PATH)
 
 

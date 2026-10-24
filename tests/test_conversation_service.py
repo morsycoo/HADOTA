@@ -162,8 +162,8 @@ def test_send_message_does_not_store_assistant_response_on_runtime_failure(
 
     messages = conversation.get_messages()
 
-    assert [message.role for message in messages] == ["system", "user"]
-    assert messages[-1].content == "Hello!"
+    assert [message.role for message in messages] == ["system"]
+    assert all(message.content != "Hello!" for message in messages)
 
 
 def test_send_message_rejects_empty_message(service, runtime, conversation):
@@ -208,7 +208,7 @@ def test_send_message_does_not_store_response_when_generation_is_incomplete(
 
     messages = conversation.get_messages()
 
-    assert [message.role for message in messages] == ["system", "user"]
+    assert [message.role for message in messages] == ["system"]
 
 
 def test_stream_message_returns_stream_events(
@@ -362,10 +362,7 @@ def test_stream_message_does_not_store_incomplete_response(
 
     messages = conversation.get_messages()
 
-    assert [message.role for message in messages] == [
-        "system",
-        "user",
-    ]
+    assert [message.role for message in messages] == ["system"]
 
 
 def test_stream_message_propagates_runtime_streaming_errors(
@@ -389,10 +386,7 @@ def test_stream_message_propagates_runtime_streaming_errors(
 
     messages = conversation.get_messages()
 
-    assert [message.role for message in messages] == [
-        "system",
-        "user",
-    ]
+    assert [message.role for message in messages] == ["system"]
 
 
 def test_stream_message_rejects_empty_input(
@@ -477,10 +471,7 @@ def test_stream_message_closes_runtime_iterator_when_cancelled(
 
     messages = conversation.get_messages()
 
-    assert [message.role for message in messages] == [
-        "system",
-        "user",
-    ]
+    assert [message.role for message in messages] == ["system"]
 
 
 def test_stream_message_does_not_store_response_after_unexpected_error(
@@ -507,10 +498,7 @@ def test_stream_message_does_not_store_response_after_unexpected_error(
 
     messages = conversation.get_messages()
 
-    assert [message.role for message in messages] == [
-        "system",
-        "user",
-    ]
+    assert [message.role for message in messages] == ["system"]
 
 
 def test_stream_message_rejects_stream_false(
@@ -988,7 +976,7 @@ def test_send_structured_message_does_not_store_invalid_response(
 
     messages = conversation.get_messages()
 
-    assert [message.role for message in messages] == ["system", "user"]
+    assert [message.role for message in messages] == ["system"]
 
 
 def test_send_structured_message_does_not_store_incomplete_response(
@@ -1014,4 +1002,4 @@ def test_send_structured_message_does_not_store_incomplete_response(
 
     messages = conversation.get_messages()
 
-    assert [message.role for message in messages] == ["system", "user"]
+    assert [message.role for message in messages] == ["system"]
