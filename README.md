@@ -1,6 +1,6 @@
 <div align="center">
 
-# HADOTA Local AI Assistant - حَدُّوتَة
+# حَدُّوتَة - HADOTA Local AI Assistant
 
 <p align="center">
   <img src="assets/HADOTA_حَدُّوتَة.png" alt="HADOTA (حَدُّوتَة) — Your Local AI Assistant" width="900">
