@@ -64,8 +64,6 @@ The figures above describe a specific recorded run and development environment. 
 
 ### Watch HADOTA in Action
 
-https://github.com/morsycoo/HADOTA/blob/main/assets/HADOTA_Local_AI_Assistant.mp4
-
 <p align="center">
   <a href="https://github.com/morsycoo/HADOTA/blob/main/assets/HADOTA_Local_AI_Assistant.mp4">
     ▶️ Watch the full HADOTA demo
@@ -137,8 +135,7 @@ flowchart TB
 
 ### What happens when a user sends a message?
 
-```mermaidflowchart TD
-    A["User sends a message"] --> B["Frontend validates input"]
+```mermaid
 flowchart TD
     A["User sends a message"] --> B["Frontend validates input"]
     B --> C["POST request to FastAPI"]
