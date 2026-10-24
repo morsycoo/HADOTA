@@ -3,13 +3,6 @@
   # حَدُّوتَة | HADOTA
   ### From tokenization experiments to a hardened local AI assistant
 
-> **HADOTA (حَدُّوتَة)** takes its name from the Egyptian Arabic word for a story or tale. Inspired by a great storyteller's curiosity, HADOTA is a local AI companion designed to make learning, exploring ideas, and having meaningful conversations feel natural and engaging.
-More than just an assistant, HADOTA aims to create a personal space for curiosity, whether you're discovering a new concept, asking questions, exploring complex topics, or simply thinking out loud.
-HADOTA brings the spirit of a curious storyteller to local AI.
-
-HADOTA is a locally run Arabic/English chat application. It serves a small browser UI and a FastAPI API from one origin, while using the existing local Ollama runtime and the configured `qwen3.8:27b` model. The web app currently uses a **non-streaming request/response path**; streaming in the browser is not claimed as complete.
-
-<p align="center">
   <img src="assets/HADOTA_حَدُّوتَة.png" alt="HADOTA (حَدُّوتَة) — Your Local AI Assistant" width="900">
 </p>
   <p>
@@ -38,7 +31,11 @@ HADOTA is a locally run Arabic/English chat application. It serves a small brows
 
 ## What is HADOTA?
 
-**HADOTA (حَدُّوتَة)** is a local-first AI assistant that brings a language model into a practical browser-based chat experience. The name draws on the Egyptian tradition of *ḥadūta* — a story shared between people — while the product turns that idea into a space to ask, explore, learn, and think with AI.
+> **HADOTA (حَدُّوتَة)** takes its name from the traditional Egyptian Arabic word of *ḥadūta* for a story or tale. Inspired by a great storyteller's curiosity, HADOTA is a local AI companion designed to make learning, exploring ideas, and having meaningful conversations feel natural and engaging.
+More than just an assistant, HADOTA aims to create a personal space for curiosity, whether you're discovering a new concept, asking questions, exploring complex topics, or simply thinking out loud.
+HADOTA brings the spirit of a curious storyteller to local AI.
+
+HADOTA is a locally run Arabic/English chat application. It serves a small browser UI and a FastAPI API from one origin, while using the existing local Ollama runtime and the configured `qwen3.8:27b` model. The web app currently uses a **non-streaming request/response path**; streaming in the browser is not claimed as complete.
 
 The project is deliberately more than a chat window. Across seven days of development, the work progressed from understanding how text becomes tokens, through real generation and decoding experiments, into a modular Ollama runtime, structured output validation, prompt-regression evaluation, and a responsive FastAPI web application with explicit session and resource controls.
 
