@@ -1,23 +1,89 @@
-### AL ###
-#Template for AL projects for Dynamics 365 Business Central
-#launch.json folder
+```gitignore
+# ==========================================
+# Secrets and environment overrides
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# Python
+# ==========================================
+__pycache__/
+*.py[cod]
+*.pyd
+.venv/
+venv/
+env/
+
+# ==========================================
+# Testing and coverage
+# ==========================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# ==========================================
+# Node dependencies
+# ==========================================
+node_modules/
+frontend/vendor/node_modules/
+
+# ==========================================
+# Logs, local databases, and generated output
+# ==========================================
+*.log
+*.sqlite
+*.sqlite3
+*.db
+outputs/
+
+# ==========================================
+# Large local models and checkpoints
+# ==========================================
+models/
+checkpoints/
+*.gguf
+*.safetensors
+
+# ==========================================
+# Backups and temporary copies
+# ==========================================
+*.bak
+*.bak-*
+*.backup
+*.broken-backup
+*.old
+*.orig
+*.rej
+*.save
+*~
+
+maintenance_backups/
+backups/
+backup/
+
+# ==========================================
+# Generated archives
+# ==========================================
+*.zip
+*.7z
+*.rar
+
+# ==========================================
+# Generated audit and patch artifacts
+# ==========================================
+HADOTA_*_AUDIT*.zip
+HADOTA_*_PATCH*.zip
+
+# ==========================================
+# Local IDE and operating system files
+# ==========================================
 .vscode/
-#Cache folder
-.alcache/
-#Symbols folder
-.alpackages/
-#Snapshots folder
-.snapshots/
-#Testing Output folder
-.output/
-#Extension App-file
-*.app
-#Rapid Application Development File
-rad.json
-#Translation Base-file
-*.g.xlf
-#License-files
-*.bclicense
-*.flf
-#Test results file
-TestResults.xml
+.idea/
+.DS_Store
+Thumbs.db
+```
