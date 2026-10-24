@@ -21,7 +21,7 @@
     <a href="#live-demo">Live Demo</a> ·
     <a href="#what-is-hadota">What It Is</a> ·
     <a href="#architecture">Architecture</a> ·
-    <a href="#seven-day-engineering-journey">7-Day Journey</a> ·
+    <a href="#the-engineering-journey">The Journey</a> ·
     <a href="#reliability-and-security-engineering">Reliability</a> ·
     <a href="#run-locally">Run Locally</a>
   </p>
@@ -37,7 +37,7 @@ HADOTA brings the spirit of a curious storyteller to local AI.
 
 HADOTA is a locally run Arabic/English chat application. It serves a small browser UI and a FastAPI API from one origin, while using the existing local Ollama runtime and the configured `qwen3.8:27b` model. The web app currently uses a **non-streaming request/response path**; streaming in the browser is not claimed as complete.
 
-The project is deliberately more than a chat window. Across seven days of development, the work progressed from understanding how text becomes tokens, through real generation and decoding experiments, into a modular Ollama runtime, structured output validation, prompt-regression evaluation, and a responsive FastAPI web application with explicit session and resource controls.
+The project is deliberately more than a chat window. Across a month of development, the work progressed from understanding how text becomes tokens, through real generation and decoding experiments, into a modular Ollama runtime, structured output validation, prompt-regression evaluation, and a responsive FastAPI web application with explicit session and resource controls.
 
 > **Project status:** HADOTA has been exercised locally on Windows with a real Ollama model and an automated test suite. This repository does **not** claim public deployment, cloud hosting, production certification, persistent database storage, or browser-based streaming. Public sharing is intentionally deferred.
 
@@ -209,11 +209,11 @@ flowchart TD
 
 ---
 
-## The seven-day engineering journey
+## The engineering journey
 
 This section is the heart of the repository: seven focused stages, each extending the knowledge and implementation developed before it. The first six stages are documented in Jupyter notebooks; the final stage applies those foundations to the HADOTA web experience and its local closeout.
 
-### Day 1 — LLM fundamentals and tokenization
+### 1 — LLM fundamentals and tokenization
 
 **Engineering question:** What does an LLM actually receive as input?
 
@@ -243,7 +243,7 @@ This section is the heart of the repository: seven focused stages, each extendin
 - Notebook: [`notebooks/01_tokenization.ipynb`](notebooks/01_tokenization.ipynb)
 - Guide: [`docs/README_01_Tokenization.md`](docs/README_01_Tokenization.md)
 
-### Day 2 — Real generation and decoding
+### 2 — Real generation and decoding
 
 **Engineering question:** How does text generation proceed, and what can the runtime actually show us?
 
@@ -264,7 +264,7 @@ This section is the heart of the repository: seven focused stages, each extendin
 - Guide: [`docs/README_02_Real_Generation_and_Decoding.md`](docs/README_02_Real_Generation_and_Decoding.md)
 - Experiment data: [`data/generation_benchmark_prompts.json`](data/generation_benchmark_prompts.json), [`data/engineering_observations.json`](data/engineering_observations.json)
 
-### Day 3 — Local runtime engineering
+### 3 — Local runtime engineering
 
 **Engineering question:** How can the application avoid being coupled to raw Ollama payloads everywhere?
 
@@ -283,7 +283,7 @@ This section is the heart of the repository: seven focused stages, each extendin
 - Notebook: [`notebooks/03_local_runtime_engineering.ipynb`](notebooks/03_local_runtime_engineering.ipynb)
 - Guide: [`docs/README_03_Local_Runtime_Engineering.md`](docs/README_03_Local_Runtime_Engineering.md)
 
-### Day 4 — Prompt construction and structured output
+### 4 — Prompt construction and structured output
 
 **Engineering question:** How do we make a model answer machine-checkable, instead of merely asking it to “return JSON”?
 
@@ -313,7 +313,7 @@ This is an example of the tested contract shape, not a claim about one fixed res
 - Guide: [`docs/README_04_prompt_construction_and_structured_output.md`](docs/README_04_prompt_construction_and_structured_output.md)
 - Validator: [`app/structured_output.py`](app/structured_output.py)
 
-### Day 5 — End-to-end local AI assistant
+### 5 — End-to-end local AI assistant
 
 **Engineering question:** How do the individually tested pieces work as one useful assistant?
 
@@ -331,7 +331,7 @@ This is an example of the tested contract shape, not a claim about one fixed res
 - Notebook: [`notebooks/05_end_to_end_local_ai_assistant.ipynb`](notebooks/05_end_to_end_local_ai_assistant.ipynb)
 - Guide: [`docs/README_05_end_to_end_local_ai_assistant.md`](docs/README_05_end_to_end_local_ai_assistant.md)
 
-### Day 6 — Prompt regression and reliability hardening
+### 6 — Prompt regression and reliability hardening
 
 **Engineering question:** How do we spot a regression and stop an incomplete generation from silently becoming a “successful” answer?
 
@@ -352,7 +352,7 @@ This is an example of the tested contract shape, not a claim about one fixed res
 - Guide: [`docs/README_06_prompt_regression_testing.md`](docs/README_06_prompt_regression_testing.md)
 - Dataset: [`data/prompt_regression_cases.json`](data/prompt_regression_cases.json)
 
-### Day 7 — HADOTA browser chat, lifecycle, and closeout
+### 7 — HADOTA browser chat, lifecycle, and closeout
 
 **Engineering question:** What changes when the assistant becomes a multi-session browser application instead of a CLI?
 
@@ -765,11 +765,25 @@ These are resource guardrails, not measured throughput limits. Public mode has a
 **Mahmoud Morsy** — AI & ML Engineering
 
 - GitHub: [@morsycoo](https://github.com/morsycoo)
-- Project repository: [morsycoo/HADOTA](https://github.com/morsycoo/HADOTA)
+- LinkedIn [@morsycoo](https://www.linkedin.com/in/morsycoo)
+If you have any questions, suggestions, or collaboration opportunities, feel free to reach out through GitHub or LinkedIn.
+
+I am always interested in discussing:
+
+- Machine Learning
+- Artificial Intelligence
+- NLP
+- Computer Vision
+- MLOps
+- Data Science
 
 ---
 
 <div align="center">
-  <strong>حَدُّوتَة — كل حكاية تبدأ بسؤال وفكرة جديدة.</strong><br>
+
+# ⭐ Thank You for Visiting ⭐
+  <strong>حَدُّوتَة ... كل حكاية تبدأ بسؤال وفكرة جديدة.</strong><br>
   <sub>A local assistant built with curiosity, engineering discipline, and evidence.</sub>
-</div>
+If this repository helped you learn something new or inspired your own projects, consider giving it a ⭐ on GitHub.
+
+Happy Coding! 🚀
