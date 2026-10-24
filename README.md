@@ -3,10 +3,6 @@
   # حَدُّوتَة | HADOTA
   ### From tokenization experiments to a hardened local AI assistant
 
-<p align="center">
-  <img src="assets/HADOTA_حَدُّوتَة.png" alt="HADOTA (حَدُّوتَة) — Your Local AI Assistant" width="900">
-</div>
-
 > **HADOTA (حَدُّوتَة)** takes its name from the Egyptian Arabic word for a story or tale. Inspired by a great storyteller's curiosity, HADOTA is a local AI companion designed to make learning, exploring ideas, and having meaningful conversations feel natural and engaging.
 More than just an assistant, HADOTA aims to create a personal space for curiosity, whether you're discovering a new concept, asking questions, exploring complex topics, or simply thinking out loud.
 HADOTA brings the spirit of a curious storyteller to local AI.
@@ -14,6 +10,7 @@ HADOTA brings the spirit of a curious storyteller to local AI.
 HADOTA is a locally run Arabic/English chat application. It serves a small browser UI and a FastAPI API from one origin, while using the existing local Ollama runtime and the configured `qwen3.8:27b` model. The web app currently uses a **non-streaming request/response path**; streaming in the browser is not claimed as complete.
 
 <p align="center">
+  <img src="assets/HADOTA_حَدُّوتَة.png" alt="HADOTA (حَدُّوتَة) — Your Local AI Assistant" width="900">
 </p>
   <p>
     <a href="https://github.com/morsycoo/HADOTA"><img alt="Repository" src="https://img.shields.io/badge/Project-HADOTA-171717?style=for-the-badge&logo=github&logoColor=white"></a>
