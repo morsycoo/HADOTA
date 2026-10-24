@@ -27,6 +27,19 @@ class RuntimeSettings(BaseModel):
     allowed_origins: str = ""
     public_mode: bool = False
 
+    # Web API resource-safety limits. Public mode is deliberately bounded.
+    max_request_body_bytes: int = Field(default=65536, ge=1024, le=1048576)
+    max_message_chars: int = Field(default=4000, ge=1, le=4000)
+    max_active_sessions: int = Field(default=25, ge=1, le=100)
+    max_conversations_per_session: int = Field(default=5, ge=1, le=20)
+    session_idle_ttl_seconds: int = Field(default=900, ge=60, le=7200)
+    session_absolute_ttl_seconds: int = Field(default=14400, ge=300, le=86400)
+    session_rate_limit_requests: int = Field(default=10, ge=1, le=120)
+    session_rate_limit_window_seconds: int = Field(default=60, ge=1, le=3600)
+    global_generation_rate_limit_requests: int = Field(default=20, ge=1, le=120)
+    global_generation_rate_limit_window_seconds: int = Field(default=60, ge=1, le=3600)
+    max_active_generations: int = Field(default=1, ge=1, le=1)
+
     request_timeout_seconds: float = Field(
         default=120.0,
         gt=0,
@@ -134,6 +147,17 @@ ENV_FIELD_MAPPING = {
     "COOKIE_SECURE": "cookie_secure",
     "ALLOWED_ORIGINS": "allowed_origins",
     "PUBLIC_MODE": "public_mode",
+    "MAX_REQUEST_BODY_BYTES": "max_request_body_bytes",
+    "MAX_MESSAGE_CHARS": "max_message_chars",
+    "MAX_ACTIVE_SESSIONS": "max_active_sessions",
+    "MAX_CONVERSATIONS_PER_SESSION": "max_conversations_per_session",
+    "SESSION_IDLE_TTL_SECONDS": "session_idle_ttl_seconds",
+    "SESSION_ABSOLUTE_TTL_SECONDS": "session_absolute_ttl_seconds",
+    "SESSION_RATE_LIMIT_REQUESTS": "session_rate_limit_requests",
+    "SESSION_RATE_LIMIT_WINDOW_SECONDS": "session_rate_limit_window_seconds",
+    "GLOBAL_GENERATION_RATE_LIMIT_REQUESTS": "global_generation_rate_limit_requests",
+    "GLOBAL_GENERATION_RATE_LIMIT_WINDOW_SECONDS": "global_generation_rate_limit_window_seconds",
+    "MAX_ACTIVE_GENERATIONS": "max_active_generations",
     "REQUEST_TIMEOUT_SECONDS": "request_timeout_seconds",
     "KEEP_ALIVE": "keep_alive",
     "NUM_CTX": "num_ctx",
@@ -215,6 +239,28 @@ def validate_public_mode_settings(settings: RuntimeSettings) -> None:
     if not settings.cookie_secure:
         raise ValueError(
             "PUBLIC_MODE requires COOKIE_SECURE=true."
+        )
+
+    # These constraints are intentionally stricter than local development.
+    # They prevent a public configuration from disabling or greatly weakening
+    # the core resource protections for this local-machine inference service.
+    public_limits = (
+        settings.max_request_body_bytes <= 65536,
+        settings.max_message_chars <= 4000,
+        settings.max_active_sessions <= 25,
+        settings.max_conversations_per_session <= 5,
+        settings.session_idle_ttl_seconds <= 900,
+        settings.session_absolute_ttl_seconds <= 14400,
+        settings.session_rate_limit_requests <= 10,
+        settings.session_rate_limit_window_seconds >= 60,
+        settings.global_generation_rate_limit_requests <= 20,
+        settings.global_generation_rate_limit_window_seconds >= 60,
+        settings.max_active_generations == 1,
+    )
+    if not all(public_limits):
+        raise ValueError(
+            "PUBLIC_MODE requires bounded request, message, session, rate, "
+            "lifetime, and single-generation limits."
         )
 
     origins = [

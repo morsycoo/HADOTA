@@ -5,7 +5,7 @@ from typing import Any
 
 from app.config import RuntimeSettings, load_settings
 from app.context.window_manager import ContextWindowManager
-from app.conversation import ConversationManager, ConversationMessage, ConversationMessage
+from app.conversation import ConversationManager, ConversationMessage
 from app.prompt_builder import PromptBuilder
 from app.runtime.base import RuntimeInterface
 from app.runtime.exceptions import IncompleteGenerationError, RuntimeStreamingError
@@ -105,23 +105,30 @@ class ConversationService:
         """Generate an assistant response to a new user message."""
         self._validate_message(content, generation_options)
 
-        # A new user turn replaces any pending continuation state.
+        # A new user turn replaces any pending continuation state. Failed turns
+        # are rolled back so a normal retry does not duplicate the user message.
         self._continuation_available = False
         self._conversation.add_user_message(content)
 
-        request = self._build_request(generation_options)
+        try:
+            request = self._build_request(generation_options)
+            result = self._runtime.generate(request)
 
-        result = self._runtime.generate(request)
+            if not result.done:
+                raise IncompleteGenerationError(
+                    "Generation is incomplete; assistant response was not stored."
+                )
 
-        if not result.done:
-            raise IncompleteGenerationError(
-                "Generation is incomplete; assistant response was not stored."
+            self._conversation.add_assistant_message(result.text)
+            self._continuation_available = result.done_reason == "length"
+            return result
+        except BaseException:
+            self._conversation.remove_last_message_if(
+                role="user",
+                content=content,
             )
-
-        self._conversation.add_assistant_message(result.text)
-        self._continuation_available = result.done_reason == "length"
-
-        return result
+            self._continuation_available = False
+            raise
 
     @property
     def continuation_available(self) -> bool:
@@ -219,26 +226,34 @@ class ConversationService:
         )
 
         self._conversation.add_user_message(content)
+        try:
+            result = self._runtime.generate(request)
 
-        result = self._runtime.generate(request)
+            if not result.done:
+                raise IncompleteGenerationError(
+                    "Generation is incomplete; assistant response was not stored."
+                )
 
-        if not result.done:
-            raise IncompleteGenerationError(
-                "Generation is incomplete; assistant response was not stored."
+            parsed_result = parse_and_validate_json(result.text, schema)
+            self._conversation.add_assistant_message(result.text)
+            return parsed_result
+        except BaseException:
+            self._conversation.remove_last_message_if(
+                role="user",
+                content=content,
             )
-
-        parsed_result = parse_and_validate_json(result.text, schema)
-
-        self._conversation.add_assistant_message(result.text)
-
-        return parsed_result
+            raise
 
     def stream_message(
         self,
         content: str,
         **generation_options: Any,
     ) -> Iterator[StreamEvent]:
-        """Stream an assistant response and store it only after successful completion."""
+        """Stream a response and commit the user/assistant turn only on success.
+
+        A failed or interrupted stream rolls back the pending user turn, allowing
+        a retry without silently duplicating history.
+        """
         self._validate_message(content, generation_options)
 
         if generation_options.get("stream", True) is not True:
@@ -249,15 +264,16 @@ class ConversationService:
             "stream": True,
         }
 
+        self._continuation_available = False
         self._conversation.add_user_message(content)
-
-        request: GenerationRequest = self._build_request(options)
 
         collected_text: list[str] = []
         final_result: GenerationResult | None = None
         runtime_stream: Iterator[StreamEvent] | None = None
+        completed = False
 
         try:
+            request: GenerationRequest = self._build_request(options)
             runtime_stream = self._runtime.generate_stream(request)
 
             for event in runtime_stream:
@@ -287,13 +303,22 @@ class ConversationService:
                 )
 
             self._conversation.add_assistant_message(response_text)
+            self._continuation_available = final_result.done_reason == "length"
+            completed = True
 
         finally:
-            if runtime_stream is not None:
-                close = getattr(runtime_stream, "close", None)
-
-                if callable(close):
-                    close()
+            try:
+                if runtime_stream is not None:
+                    close = getattr(runtime_stream, "close", None)
+                    if callable(close):
+                        close()
+            finally:
+                if not completed:
+                    self._conversation.remove_last_message_if(
+                        role="user",
+                        content=content,
+                    )
+                    self._continuation_available = False
 
     @staticmethod
     def _validate_message(
