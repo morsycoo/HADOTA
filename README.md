@@ -64,13 +64,10 @@ The figures above describe a specific recorded run and development environment. 
 
 ### Watch HADOTA in action
 
-<a href="assets/HADOTA_Local_AI_Assistant.mp4">
-  <img src="assets/hadota-mobile-conversation.png" alt="Open the HADOTA demo video — responsive chat UI, a technical question, and a local-model response" width="100%" />
-</a>
-
-<div align="center">
-  <strong>▶ Click the preview to open the demo video</strong><br>
-  <a href="assets/HADOTA_Local_AI_Assistant.mp4">Open or download HADOTA_Local_AI_Assistant.mp4</a>
+<p align="center">
+  <a href="assets/HADOTA_Local_AI_Assistant.mp4">
+  </a>
+</p>
 </div>
 
 ### Application screenshots
