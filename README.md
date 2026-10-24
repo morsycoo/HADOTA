@@ -1,15 +1,13 @@
 <div align="center">
+  <img src="assets/hadota-hero.jpg" alt="HADOTA — حَدُّوتَة, a local AI assistant inspired by Egyptian storytelling" width="100%" />
 
-# حَدُّوتَة - HADOTA
-### A Local-First AI Assistant, Built from Tokenization to a Hardened Web Chat
+  # حَدُّوتَة | HADOTA
 
-**Understand the model. Engineer the runtime. Validate the behavior. Ship a usable interface.**
+  ### From tokenization experiments to a hardened local AI assistant
 
 <p align="center">
   <img src="assets/HADOTA_حَدُّوتَة.png" alt="HADOTA (حَدُّوتَة) — Your Local AI Assistant" width="900">
 </p>
-
-[Overview](#overview) · [Screenshots](#screenshots) · [Architecture](#architecture) · [Features](#features) · [Seven-Day Journey](#the-seven-day-engineering-journey) · [Setup](#getting-started) · [Testing](#testing-and-verification) · [Limitations](#known-limitations)
 </div>
 
 > **HADOTA (حَدُّوتَة)** takes its name from the Egyptian Arabic word for a story or tale. Inspired by a great storyteller's curiosity, HADOTA is a local AI companion designed to make learning, exploring ideas, and having meaningful conversations feel natural and engaging.
