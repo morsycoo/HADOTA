@@ -137,32 +137,22 @@ flowchart TB
 
 ### What happens when a user sends a message?
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User
-    participant Browser as Browser UI
-    participant API as FastAPI
-    participant Session as SessionManager
-    participant Service as ConversationService
-    participant Runtime as OllamaRuntime
-    participant Ollama as Local Ollama / Qwen
-
-    User->>Browser: Enter message
-    Browser->>API: POST message to owned conversation
-    API->>API: Check body size, schema, Origin and limits
-    API->>Session: Resolve anonymous session + conversation ownership
-    Session-->>API: Valid session and conversation
-    API->>Service: Start guarded conversation turn
-    Service->>Service: Prepare history, prompt and context budget
-    Service->>Runtime: GenerationRequest
-    Runtime->>Ollama: Local HTTP generation request
-    Ollama-->>Runtime: Generated text + completion metadata
-    Runtime-->>Service: Normalized GenerationResult
-    Service->>Service: Validate completion; commit or rollback turn
-    Service-->>API: Completed assistant response
-    API-->>Browser: JSON response
-    Browser-->>User: Render response in the correct conversation
+```mermaidflowchart TD
+    A["User sends a message"] --> B["Frontend validates input"]
+    B --> C["POST request to FastAPI"]
+    C --> D["Validate payload and session"]
+    D --> E["Apply rate limits and concurrency controls"]
+    E --> F["Conversation Service builds the prompt"]
+    F --> G["Ollama Runtime sends the request"]
+    G --> H["Local Qwen model generates a response"]
+    H --> I["Validate generation result"]
+    I --> J["Store successful assistant response"]
+    J --> K["Return response to frontend"]
+    K --> L["Render the conversation"]
+    
+    I -.-> M["Handle incomplete or failed generation"]
+    M -.-> N["Rollback failed turn when applicable"]
+    N -.-> K
 ```
 
 ### Architectural boundaries
