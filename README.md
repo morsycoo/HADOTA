@@ -5,6 +5,14 @@
 
 <p align="center">
   <img src="assets/HADOTA_حَدُّوتَة.png" alt="HADOTA (حَدُّوتَة) — Your Local AI Assistant" width="900">
+</div>
+
+> **HADOTA (حَدُّوتَة)** takes its name from the Egyptian Arabic word for a story or tale. Inspired by a great storyteller's curiosity, HADOTA is a local AI companion designed to make learning, exploring ideas, and having meaningful conversations feel natural and engaging.
+More than just an assistant, HADOTA aims to create a personal space for curiosity, whether you're discovering a new concept, asking questions, exploring complex topics, or simply thinking out loud.
+HADOTA brings the spirit of a curious storyteller to local AI.
+
+HADOTA is a locally run Arabic/English chat application. It serves a small browser UI and a FastAPI API from one origin, while using the existing local Ollama runtime and the configured `qwen3.8:27b` model. The web app currently uses a **non-streaming request/response path**; streaming in the browser is not claimed as complete.
+
 </p>
   <p>
     <a href="https://github.com/morsycoo/HADOTA"><img alt="Repository" src="https://img.shields.io/badge/Project-HADOTA-171717?style=for-the-badge&logo=github&logoColor=white"></a>
@@ -18,16 +26,6 @@
     <img alt="Coverage" src="https://img.shields.io/badge/Coverage-91%25-2E8B57?style=for-the-badge">
     <img alt="Deployment" src="https://img.shields.io/badge/Deployment-Local--First-D4A85A?style=for-the-badge">
   </p>
-
-</div>
-
-> **HADOTA (حَدُّوتَة)** takes its name from the Egyptian Arabic word for a story or tale. Inspired by a great storyteller's curiosity, HADOTA is a local AI companion designed to make learning, exploring ideas, and having meaningful conversations feel natural and engaging.
-More than just an assistant, HADOTA aims to create a personal space for curiosity, whether you're discovering a new concept, asking questions, exploring complex topics, or simply thinking out loud.
-HADOTA brings the spirit of a curious storyteller to local AI.
-
-HADOTA is a locally run Arabic/English chat application. It serves a small browser UI and a FastAPI API from one origin, while using the existing local Ollama runtime and the configured `qwen3.8:27b` model. The web app currently uses a **non-streaming request/response path**; streaming in the browser is not claimed as complete.
-
-
   <p>
     <a href="#live-demo">Live Demo</a> ·
     <a href="#what-is-hadota">What It Is</a> ·
