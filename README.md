@@ -812,7 +812,7 @@ Reach out through **[GitHub](https://github.com/morsycoo)** or **[LinkedIn](http
 
 # ⭐ Thank You for Visiting ⭐
   <strong>حَدُّوتَة ... كل حكاية تبدأ بسؤال وفكرة جديدة.</strong><br>
-  <sub>A local assistant built with curiosity, engineering discipline, and evidence.</sub>
+A local assistant built with curiosity, engineering discipline, and evidence.
 If this repository helped you learn something new or inspired your own projects, consider giving it a ⭐ on GitHub.
 
 Happy Coding! 🚀
