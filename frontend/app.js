@@ -6,6 +6,7 @@
     conversationId: null,
     conversations: [],
     busy: false,
+    activeRequests: new Set(),
     sessionReady: false,
     closing: false
   };
@@ -58,11 +59,31 @@
     notice.hidden = !message;
   }
 
-  function setBusy(busy) {
+  function isConversationBusy(conversationId) {
+    return Boolean(
+      conversationId && state.activeRequests.has(conversationId)
+    );
+  }
+
+  function syncBusyUI() {
+    const busy = isConversationBusy(state.conversationId);
     state.busy = busy;
-    sendButton.disabled = busy;
+    sendButton.disabled = busy || !state.conversationId;
     input.disabled = false;
-    $("send-label").textContent = busy ? "\u062c\u0627\u0631\u064a \u0627\u0644\u0625\u0631\u0633\u0627\u0644" : "\u0625\u0631\u0633\u0627\u0644";
+    $("send-label").textContent = busy
+      ? "\u062c\u0627\u0631\u064a \u0627\u0644\u0625\u0631\u0633\u0627\u0644"
+      : "\u0625\u0631\u0633\u0627\u0644";
+  }
+
+  function setBusy(busy, conversationId = state.conversationId) {
+    if (conversationId) {
+      if (busy) {
+        state.activeRequests.add(conversationId);
+      } else {
+        state.activeRequests.delete(conversationId);
+      }
+    }
+    syncBusyUI();
   }
 
   function scrollToLatest() {
@@ -86,6 +107,9 @@
   function addMessage(role, content, options = {}) {
     const article = document.createElement("article");
     article.className = `message ${role}`;
+    if (state.conversationId) {
+      article.dataset.conversationId = state.conversationId;
+    }
 
     const label = document.createElement("div");
     label.className = "message-role";
@@ -191,6 +215,7 @@
     });
     if (navigation !== navigationVersion) return;
     state.conversationId = data.conversation_id;
+    syncBusyUI();
     $("current-title").textContent = data.title || "\u0645\u062d\u0627\u062f\u062b\u0629 \u062c\u062f\u064a\u062f\u0629";
     showWelcome();
     await refreshConversations();
@@ -205,6 +230,7 @@
       const data = await api(`/api/conversations/${encodeURIComponent(id)}`);
       if (navigation !== navigationVersion) return;
       state.conversationId = data.conversation_id;
+      syncBusyUI();
       $("current-title").textContent = data.title || "\u0645\u062d\u0627\u062f\u062b\u0629 \u062c\u062f\u064a\u062f\u0629";
       messages.replaceChildren();
       welcome.hidden = true;
@@ -229,12 +255,18 @@
       closeSidebar();
       transcript.scrollTop = transcript.scrollHeight;
     } catch (error) {
+      if (navigation !== navigationVersion) return;
       handleError(error, "\u062a\u0639\u0630\u0631 \u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u0639\u0645\u0644\u064a\u0629.");
     }
   }
 
   async function continueMessage(article, button) {
-    if (state.busy || !state.conversationId) return;
+    const conversationId = article.dataset.conversationId || state.conversationId;
+    if (
+      !conversationId ||
+      state.conversationId !== conversationId ||
+      isConversationBusy(conversationId)
+    ) return;
 
     const body = article.querySelector(".message-content");
     if (!body) return;
@@ -242,50 +274,78 @@
     const oldLabel = button.textContent;
     button.disabled = true;
     button.textContent = "\u062c\u0627\u0631\u064a \u0627\u0633\u062a\u0643\u0645\u0627\u0644...";
-    setBusy(true);
+    setBusy(true, conversationId);
     showNotice("");
 
     try {
       const data = await api(
-        `/api/conversations/${encodeURIComponent(state.conversationId)}/continue`,
+        `/api/conversations/${encodeURIComponent(conversationId)}/continue`,
         { method: "POST" }
       );
 
-      renderMessageContent(body, data.content || "");
+      if (state.conversationId === conversationId) {
+        if (body.isConnected) {
+          renderMessageContent(body, data.content || "");
 
-      if (data.continuation_available === true) {
-        button.textContent = "\u0643\u0645\u0651\u0644 \u0627\u0644\u0625\u062c\u0627\u0628\u0629";
-        button.disabled = false;
-      } else {
-        button.remove();
+          if (data.continuation_available === true) {
+            button.textContent = "\u0643\u0645\u0651\u0644 \u0627\u0644\u0625\u062c\u0627\u0628\u0629";
+            button.disabled = false;
+          } else {
+            button.remove();
+          }
+        } else {
+          // Navigation may have replaced the original DOM node while the
+          // continuation was running. Reload the current history instead of
+          // mutating a detached message element.
+          await openConversation(conversationId);
+        }
       }
 
       await refreshConversations();
-      scrollToLatest();
+      if (state.conversationId === conversationId) {
+        scrollToLatest();
+      }
     } catch (error) {
-      button.disabled = false;
-      button.textContent = oldLabel;
-      handleError(error, "\u062a\u0639\u0630\u0651\u0631 \u0627\u0633\u062a\u0643\u0645\u0627\u0644 \u0627\u0644\u0625\u062c\u0627\u0628\u0629.");
+      if (body.isConnected) {
+        button.disabled = false;
+        button.textContent = oldLabel;
+      }
+      if (state.conversationId === conversationId) {
+        handleError(error, "\u062a\u0639\u0630\u0651\u0631 \u0627\u0633\u062a\u0643\u0645\u0627\u0644 \u0627\u0644\u0625\u062c\u0627\u0628\u0629.");
+      }
     } finally {
-      setBusy(false);
+      setBusy(false, conversationId);
     }
   }
 
-  async function sendMessage(text) {
+  async function sendMessage(text, retryOptions = {}) {
     const content = text.trim();
-    if (!content || state.busy) return;
+    if (!content) return;
+    if (
+      retryOptions.conversationId &&
+      state.conversationId !== retryOptions.conversationId
+    ) return;
+    if (isConversationBusy(state.conversationId)) return;
 
     if (!state.conversationId) {
       await createConversation();
     }
 
-    const conversationId = state.conversationId;
-    const conversationTitle = $("current-title").textContent;
+    const conversationId = retryOptions.conversationId || state.conversationId;
+    if (
+      !conversationId ||
+      state.conversationId !== conversationId ||
+      isConversationBusy(conversationId)
+    ) return;
+
     input.value = "";
     resizeInput();
-    addMessage("user", content);
+    const userArticle = retryOptions.reuseUserArticle &&
+      retryOptions.reuseUserArticle.isConnected
+        ? retryOptions.reuseUserArticle
+        : addMessage("user", content);
     const pending = addMessage("assistant", "", { pending: true });
-    setBusy(true);
+    setBusy(true, conversationId);
     showNotice("");
 
     try {
@@ -295,10 +355,12 @@
       );
 
       pending.remove();
+
       if (state.conversationId !== conversationId) {
         await refreshConversations();
         return;
       }
+
       if (data.done) {
         if (data.title) $("current-title").textContent = data.title;
         addMessage("assistant", data.content || "", {
@@ -306,32 +368,48 @@
         });
         setConnection(true, "\u062c\u0627\u0647\u0632");
       } else {
-        addMessage("assistant", "\u062d\u062f\u062b \u062e\u0637\u0623. \u062d\u0627\u0648\u0644 \u0625\u0631\u0633\u0627\u0644 \u0631\u0633\u0627\u0644\u062a\u0643 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.");
+        addMessage(
+          "assistant",
+          "\u062d\u062f\u062b \u062e\u0637\u0623. \u062d\u0627\u0648\u0644 \u0625\u0631\u0633\u0627\u0644 \u0631\u0633\u0627\u0644\u062a\u0643 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649."
+        );
       }
+
       await refreshConversations();
     } catch (error) {
       pending.remove();
+
       if (state.conversationId !== conversationId) {
-        showToast("????? ??? ?? ?????? ????? ????? ?????? ????? ??????? ???????.");
+        await refreshConversations();
         return;
       }
+
       const failed = addMessage(
         "assistant",
         "\u0644\u0645 \u064a\u0645\u0643\u0646 \u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u0637\u0644\u0628. \u062a\u062d\u0642\u0642 \u0645\u0646 \u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0648\u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649."
       );
+
       const retry = document.createElement("button");
       retry.type = "button";
       retry.className = "text-button";
       retry.textContent = "\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629";
-      retry.addEventListener("click", () => sendMessage(content));
+      retry.addEventListener("click", () => {
+        failed.remove();
+        sendMessage(content, {
+          conversationId,
+          reuseUserArticle: userArticle
+        });
+      });
+
       const actions = document.createElement("div");
       actions.className = "message-actions";
       actions.appendChild(retry);
       failed.appendChild(actions);
       handleError(error, "\u062a\u0639\u0630\u0631 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0631\u0633\u0627\u0644\u0629.");
     } finally {
-      setBusy(false);
-      if (state.conversationId === conversationId) input.focus();
+      setBusy(false, conversationId);
+      if (state.conversationId === conversationId) {
+        input.focus();
+      }
     }
   }
 
@@ -392,7 +470,7 @@
   });
 
   $("end-session").addEventListener("click", async () => {
-    if (state.busy || state.closing) return;
+    if (state.activeRequests.size > 0 || state.closing) return;
     if (!confirm("\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u062c\u0644\u0633\u0629 \u0648\u062d\u0630\u0641 \u0627\u0644\u0645\u062d\u0627\u062f\u062b\u0627\u062a \u0627\u0644\u0645\u0624\u0642\u062a\u0629\u061f")) return;
 
     state.closing = true;
@@ -416,8 +494,8 @@
 
   window.addEventListener("pagehide", (event) => {
     if (!event.persisted && state.sessionReady && !state.closing) {
-      fetch("/api/session", {
-        method: "DELETE",
+      fetch("/api/session/close", {
+        method: "POST",
         credentials: "same-origin",
         keepalive: true
       }).catch(() => {});
