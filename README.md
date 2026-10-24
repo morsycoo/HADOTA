@@ -760,25 +760,54 @@ These are resource guardrails, not measured throughput limits. Public mode has a
 
 ---
 
-## Author
+## 👨‍💻 About the Author
 
-**Mahmoud Morsy** — AI & ML Engineering
+<div align="center">
 
-- GitHub: [@morsycoo](https://github.com/morsycoo)
-- LinkedIn [@morsycoo](https://www.linkedin.com/in/morsycoo)
-If you have any questions, suggestions, or collaboration opportunities, feel free to reach out through GitHub or LinkedIn.
+# Mahmoud Morsy
 
-I am always interested in discussing:
+### AI Engineer | LLM Applications | Machine Learning
 
-- Machine Learning
-- Artificial Intelligence
-- NLP
-- Computer Vision
-- MLOps
-- Data Science
+*Building practical AI systems — from model experimentation to reliable, user-facing applications.*
+
+<br>
+
+<a href="https://github.com/morsycoo">
+  <img src="https://img.shields.io/badge/GitHub-morsycoo-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
+</a>
+<a href="https://www.linkedin.com/in/morsycoo">
+  <img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn">
+</a>
+
+</div>
 
 ---
 
+### 🧠 Areas of Interest
+
+| Area                                 | Focus                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------- |
+| **Large Language Models**            | Local inference, prompt engineering, structured generation, and evaluation |
+| **AI Engineering**                   | Application architecture, API integration, reliability, and testing        |
+| **Machine Learning & Deep Learning** | Model experimentation, evaluation, and performance analysis                |
+| **Natural Language Processing**      | Text processing, tokenization, and language-model applications             |
+| **Computer Vision**                  | Image understanding and object-detection systems                           |
+| **MLOps & Deployment**               | Reproducibility, runtime optimization, and deployment workflows            |
+| **Data Science**                     | Data analysis, experimentation, and evidence-driven decisions              |
+
+### 🚀 Engineering Philosophy
+
+I focus on understanding how AI systems work beyond the model itself: how data is processed, how inference is executed, how components communicate, and how applications are tested for reliability.
+
+HADOTA represents this approach by bringing together local LLM inference, a web interface, backend engineering, session management, request controls, and automated testing in one project.
+
+### 🤝 Let's Connect
+
+Interested in AI engineering, LLM applications, open-source projects, or technical collaboration?
+
+Reach out through **[GitHub](https://github.com/morsycoo)** or **[LinkedIn](https://www.linkedin.com/in/morsycoo)**.
+
+---
 <div align="center">
 
 # ⭐ Thank You for Visiting ⭐
