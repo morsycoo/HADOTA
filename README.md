@@ -62,11 +62,13 @@ The figures above describe a specific recorded run and development environment. 
 
 ## Live Demo
 
-### Watch HADOTA in action
+### Watch HADOTA in Action
+
+https://github.com/morsycoo/HADOTA/blob/main/assets/HADOTA_Local_AI_Assistant.mp4
 
 <p align="center">
-  <a href="assets/HADOTA_Local_AI_Assistant.mp4">
-    ▶️ Watch or download the full demo video
+  <a href="https://github.com/morsycoo/HADOTA/blob/main/assets/HADOTA_Local_AI_Assistant.mp4">
+    ▶️ Watch the full HADOTA demo
   </a>
 </p>
 </div>
@@ -137,9 +139,11 @@ flowchart TB
 
 ```mermaidflowchart TD
     A["User sends a message"] --> B["Frontend validates input"]
+flowchart TD
+    A["User sends a message"] --> B["Frontend validates input"]
     B --> C["POST request to FastAPI"]
     C --> D["Validate payload and session"]
-    D --> E["Apply rate limits and concurrency controls"]
+    D --> E["Rate limiting and concurrency controls"]
     E --> F["Conversation Service builds the prompt"]
     F --> G["Ollama Runtime sends the request"]
     G --> H["Local Qwen model generates a response"]
@@ -147,7 +151,6 @@ flowchart TB
     I --> J["Store successful assistant response"]
     J --> K["Return response to frontend"]
     K --> L["Render the conversation"]
-    
     I -.-> M["Handle incomplete or failed generation"]
     M -.-> N["Rollback failed turn when applicable"]
     N -.-> K
