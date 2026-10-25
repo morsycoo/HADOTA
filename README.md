@@ -660,8 +660,7 @@ HADOTA/
 ├── frontend/
 │   ├── index.html                     # Web app markup
 │   ├── styles.css                     # UI styling / responsive layout
-│   ├── app.js                         # Browser behavior and API calls
-│   └── vendor/                        # Local frontend dependencies/manifest
+│   └── app.js                         # Browser behavior and API calls
 ├── notebooks/
 │   ├── 01_tokenization.ipynb
 │   ├── 02_real_generation_and_decoding.ipynb
@@ -672,7 +671,6 @@ HADOTA/
 ├── reports/                            # Test, regression, closeout and screenshot artifacts
 ├── tests/                              # Unit, mock, API, regression and runtime smoke tests
 ├── requirements.txt
-├── requirements-dev.txt
 └── README.md
 ```
 
