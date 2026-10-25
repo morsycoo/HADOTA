@@ -1,5 +1,4 @@
 <div align="center">
-  
   # حَدُّوتَة | HADOTA
   ### From tokenization experiments to a hardened local AI assistant
 
